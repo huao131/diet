@@ -5,11 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>我的 AI 享瘦日記 - 餐量管理個人紀錄版</title>
     
+    <!-- 黑科技導航線索！讓 iPhone 和安卓「加入主畫面」時，自動識別優雅 Logo 作為桌面 App 圖示 -->
     <link rel="apple-touch-icon" href="newlogo.png">
     <link rel="icon" type="image/png" href="newlogo.png">
     
+    <!-- Bootstrap 美化樣式庫 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Chart.js 圖表大師 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- html2canvas 卡片轉相片黑科技 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body {
@@ -307,12 +311,15 @@
 </head>
 <body>
 
+<!-- 大健康「歡迎啟動大畫面」 -->
 <div id="splash-screen">
+    <!-- 優雅 Logo 骨架位置 -->
     <img src="newlogo.png" alt="Logo" class="splash-logo">
     
     <div class="splash-title">我的 AI 享瘦日記</div>
     <div class="splash-subtitle">📋 IAE國際餐量管理師指導項目</div>
     
+    <!-- 會呼吸的圓圈按鈕，內文為「開啟享瘦日記」 -->
     <div class="start-circle-btn" onclick="closeSplashScreen()">
         開啟<br>享瘦日記
     </div>
@@ -321,6 +328,7 @@
 <div class="container" style="padding-bottom: 30px;">
     <div class="app-container">
         
+        <!-- 權威大頭貼與標題區 -->
         <div class="text-center mb-4">
             <h2 class="fw-bold m-0" style="color: #1e3a8a; font-size: 1.65rem;" id="main-app-title">我的 AI 享瘦日記</h2>
             <div class="mt-1 fw-bold text-success" style="font-size: 0.88rem; letter-spacing: 1px;">
@@ -328,6 +336,7 @@
             </div>
         </div>
         
+        <!-- ================= 頁面 A：飲食打卡 ================= -->
         <div id="page-diet" class="d-none">
             <div class="calorie-dashboard">
                 <div class="d-flex justify-content-between mb-2 text-muted small">
@@ -352,8 +361,14 @@
                 </div>
             </div>
 
+            <!-- 每日體重科學打卡卡片 -->
             <div class="card p-3 mb-4" style="background-color: #f0fdf4; border: 1px solid #bbf7d0;">
-                <h6 class="fw-bold text-success mb-3">⚖️ 每日體重科學打卡</h6>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="fw-bold text-success m-0">⚖️ 每日體重科學打卡</h6>
+                    <!-- 🌟 新增視覺優化：動態打卡狀態標籤 🌟 -->
+                    <span class="badge bg-warning text-dark fw-bold" id="weight-status-badge" style="font-size: 0.75rem; padding: 4px 8px;">⚠️ 今日尚未存檔</span>
+                </div>
+                
                 <div class="row g-2 mb-2">
                     <div class="col">
                         <label class="small text-muted mb-1">🌙 前日睡前體重</label>
@@ -365,7 +380,7 @@
                     </div>
                 </div>
                 <div class="text-muted small mb-2" style="font-size: 11px;">* 提示：按下方按鈕將同步更新右側大健康趨勢折線圖。</div>
-                <button class="btn btn-success btn-sm w-100 fw-bold mt-1" onclick="addDoubleWeightRecord()">同步記錄雙體重</button>
+                <button class="btn btn-success btn-sm w-100 fw-bold mt-1" id="sync-weight-btn" onclick="addDoubleWeightRecord()">同步記錄雙體重</button>
             </div>
 
             <div class="card p-3 mb-4" style="background-color: #f3e8ff; border: 1px solid #c084fc;">
@@ -399,6 +414,7 @@
         </div>
 
 
+        <!-- ================= 頁面 B：數據報表 ================= -->
         <div id="page-reports" class="d-none">
             <div class="section-title">大健康趨勢分析圖</div>
             <div class="chart-container">
@@ -416,6 +432,7 @@
                 </li>
             </ul>
 
+            <!-- 卡片 A：餐量管理個人紀錄版（見證長圖卡） -->
             <div class="history-card-box" id="capture-history-area">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <h6 class="fw-bold text-success m-0" style="font-size: 1.05rem; letter-spacing: 0.5px;">
@@ -443,6 +460,7 @@
                 </button>
             </div>
 
+            <!-- 卡片 B：日光國際大數據管理中心 -->
             <div class="data-management-box">
                 <h6 class="fw-bold text-primary mb-2" style="font-size: 1.05rem;">
                     📊 日光國際大數據管理中心
@@ -455,10 +473,12 @@
                 </button>
             </div>
 
+            <!-- 專業保護小字 -->
             <div class="text-muted mb-2 text-center" style="font-size: 0.72rem; padding: 0 10px;">
                 ⚠️ 本數據報告來源為個人自行填寫之數據整理報告，非醫療報告，請自行保存。
             </div>
 
+            <!-- [好康報報] 專屬活動公告動態引流卡 -->
             <div class="good-news-box">
                 <h6 class="fw-bold mb-2" style="color: #ea580c; font-size: 1.05rem;">
                     🎁 [好康報報] 日光國際專屬學員福利
@@ -473,6 +493,7 @@
         </div>
 
 
+        <!-- ================= 頁面 C：個人資訊 ================= -->
         <div id="page-profile" class="d-block">
             <div class="privacy-alert p-3 mb-4 text-center">
                 🔒 <strong>安心聲明</strong>：本系統所記錄的所有數據與照片，<strong>完全儲存在您自己的手機本地瀏覽器中</strong>，絕不上傳 any 外部伺服器，不會有任何隱私外洩的風險，請放心體驗！
@@ -558,6 +579,7 @@
 
             <button class="primary-btn mb-4" onclick="saveProfile()">儲存並生成我的定制計劃 🚀</button>
 
+            <!-- 清除資訊防誤解大鈕 -->
             <div class="text-center pt-3 border-top">
                 <button class="btn btn-sm btn-outline-danger fw-bold px-3 py-2" style="border-radius: 10px; font-size: 0.85rem;" onclick="factoryResetAllData()">
                     ⚠️ 清除本機餐量管理資訊並重新設定
@@ -565,6 +587,7 @@
             </div>
         </div>
 
+        <!-- 底部常駐版權宣告全新更名引流線 -->
         <div class="footer-copyright">
             設計人<strong>mata老師</strong> | LINE官方帳號搜尋: <span class="text-primary fw-bold">Ai168百業數位平台</span>
         </div>
@@ -572,6 +595,7 @@
     </div>
 </div>
 
+<!-- 底部常駐App導覽切換列 -->
 <div class="app-bottom-nav d-none" id="main-app-navigation">
     <button class="nav-item-box" id="tab-diet" onclick="switchMainPage('diet')">
         <span class="nav-icon">🍳</span>飲食打卡
@@ -634,7 +658,40 @@
         renderFoodList();
         renderHistoryShareCard(); 
         initChart();
+        checkAndRenderWeightStatus(); // 🌟 新增功能：網頁開機時自動檢查今天輸入過體重了沒 🌟
     };
+
+    // 🌟 新增功能：智慧檢查今天輸入過了沒，並渲染畫面提示 🌟
+    function checkAndRenderWeightStatus() {
+        const bedtimeHistory = JSON.parse(localStorage.getItem('myBedtimeHistory')) || {};
+        const wakeupHistory = JSON.parse(localStorage.getItem('myWakeupHistory')) || {};
+        
+        const bWeight = bedtimeHistory[todayStr];
+        const wWeight = wakeupHistory[todayStr];
+        
+        const badge = document.getElementById('weight-status-badge');
+        const syncBtn = document.getElementById('sync-weight-btn');
+        const bedtimeInput = document.getElementById('bedtimeWeight');
+        const wakeupInput = document.getElementById('wakeupWeight');
+        
+        if (!badge) return;
+        
+        // 如果睡前跟起床體重都有了，代表今日大功告成
+        if (bWeight !== undefined || wWeight !== undefined) {
+            badge.innerText = "✅ 今日雙體重已科學存檔！";
+            badge.className = "badge bg-success text-white fw-bold";
+            syncBtn.innerText = "重新更新今日體重 🔄";
+            
+            // 自動把存檔的數字填回輸入框，讓學員知道之前打卡是多少數字（防健忘）
+            if (bWeight !== undefined && bedtimeInput && !bedtimeInput.value) bedtimeInput.value = bWeight;
+            if (wWeight !== undefined && wakeupInput && !wakeupInput.value) wakeupInput.value = wWeight;
+        } else {
+            // 如果手機大腦空空如也，顯示警告提醒學員打卡
+            badge.innerText = "⚠️ 今日尚未存檔";
+            badge.className = "badge bg-warning text-dark fw-bold";
+            syncBtn.innerText = "同步記錄雙體重";
+        }
+    }
 
     function factoryResetAllData() {
         const msg1 = "⚠️ 您即將啟動餐量管理資訊重置。\n這將會徹底抹除您這台手機上記錄的所有飲食日記、照片、前日睡前/今日起床雙體重以及個人數據。\n\n";
@@ -662,6 +719,7 @@
         if (pageName === 'diet') {
             document.getElementById('page-diet').classList.remove('d-none');
             document.getElementById('tab-diet').classList.add('active');
+            checkAndRenderWeightStatus(); // 🌟 切換回打卡頁時，再次觸發狀態檢查 🌟
         } else if (pageName === 'reports') {
             document.getElementById('page-reports').classList.remove('d-none');
             document.getElementById('tab-reports').classList.add('active');
@@ -870,8 +928,9 @@
         localStorage.setItem('myWakeupHistory', JSON.stringify(wakeupHistory));
 
         alert('雙體重紀錄成功！');
-        bedtimeInput.value = '';
-        wakeupInput.value = '';
+        
+        // 🌟 修正：不急著清空，而是觸發重新渲染，讓輸入框保留數字並亮起綠色勾勾 🌟
+        checkAndRenderWeightStatus();
         
         initChart(); 
         renderHistoryShareCard(); 
@@ -963,6 +1022,13 @@
         delete wakeupHistory[todayStr];
         localStorage.setItem('myBedtimeHistory', JSON.stringify(bedtimeHistory));
         localStorage.setItem('myWakeupHistory', JSON.stringify(wakeupHistory));
+
+        // 🌟 修正：清除今日紀錄時，同步將體重打卡狀態恢復成黃色未存檔狀態，輸入框清空 🌟
+        const bedtimeInput = document.getElementById('bedtimeWeight');
+        const wakeupInput = document.getElementById('wakeupWeight');
+        if(bedtimeInput) bedtimeInput.value = '';
+        if(wakeupInput) wakeupInput.value = '';
+        checkAndRenderWeightStatus();
 
         renderFoodList();
         renderHistoryShareCard();
