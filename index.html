@@ -3,17 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的 AI 享瘦日記 - 極致完美版</title>
-    <!-- 引入美化網頁的樣式庫 -->
+    <title>我的 AI 享瘦日記 - 餐量管理個人紀錄版</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- 引入免費的網頁圖表大師 Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body {
             background-color: #f4f7fe;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: #333;
-            padding-bottom: 70px; /* 留底部的空間給新版權聲明衣服，避免擋到按鈕 */
+            padding-bottom: 70px; /* 留底部的空間給版權聲明 */
         }
         .app-container {
             max-width: 500px;
@@ -102,11 +101,32 @@
         }
         .chart-container {
             background: #f8fafc;
-            border-radius: 20px;
+            border-bottom-left-radius: 20px;
+            border-bottom-right-radius: 20px;
             padding: 15px;
             margin-bottom: 24px;
+            border: 1px solid #dee2e6;
+            border-top: none;
         }
-        /* 🌟 專屬特製：新版權與 LINE、服務中心的固定漂亮旗幟 */
+        .nav-tabs-custom {
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .nav-tabs-custom .nav-link {
+            border: none;
+            color: #64748b;
+            font-weight: 600;
+            padding: 10px 20px;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+            margin-bottom: -2px;
+        }
+        .nav-tabs-custom .nav-link.active {
+            color: #3b82f6;
+            background-color: #f8fafc;
+            border: 1px solid #dee2e6;
+            border-bottom: 2px solid #f8fafc;
+        }
+        /* 底部固定的漂亮版權旗幟 */
         .footer-copyright {
             text-align: center;
             padding: 12px 10px;
@@ -123,28 +143,59 @@
             z-index: 999;
             box-shadow: 0 -4px 12px rgba(0,0,0,0.04);
         }
+        .privacy-alert {
+            background-color: #fff7ed;
+            border: 1px dashed #fed7aa;
+            color: #c2410c;
+            border-radius: 14px;
+            font-size: 0.9rem;
+        }
+        /* 餐量管理個人紀錄版卡片外觀 */
+        .history-card-box {
+            background-color: #ffffff;
+            border: 1px solid #a7f3d0;
+            border-radius: 20px;
+            padding: 18px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+        }
+        .btn-group-toggle .btn {
+            font-size: 0.75rem;
+            font-weight: bold;
+            padding: 2px 10px;
+            border-radius: 8px;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="app-container">
-        <h2 class="text-center mb-4 fw-bold" style="color: #1e3a8a;">我的 AI 享瘦日記</h2>
+        <h2 class="text-center mb-4 fw-bold" style="color: #1e3a8a;" id="main-app-title">我的 AI 享瘦日記</h2>
         
-        <!-- ================= 步驟 1：基本數據輸入表單（完整保留） ================= -->
         <div id="profile-section">
+            <div class="privacy-alert p-3 mb-4 text-center">
+                🔒 <strong>安心聲明</strong>：本系統所記錄的所有數據與照片，<strong>完全儲存在您自己的手機本地瀏覽器中</strong>，絕不上傳任何外部伺服器，不會有任何隱私外洩的風險，請放心體驗！
+            </div>
+
             <div class="section-title">第一步：輸入身體基本數據</div>
             
+            <div class="mb-3">
+                <label class="form-label" style="font-weight: 600; color: #1e3a8a;">您的暱稱 / 稱呼</label>
+                <input type="text" id="userName" class="form-control" placeholder="例如: mata" value="mata">
+            </div>
+
             <div class="mb-3">
                 <label class="form-label">出生年份 (西元)</label>
                 <input type="number" id="birthYear" class="form-control" value="1995">
             </div>
 
             <div class="mb-3">
-                <label class="form-label">性別</label>
+                <label class="form-label">性別認同</label>
                 <select id="gender" class="form-select">
-                    <option value="female">女性</option>
-                    <option value="male">男性</option>
+                    <option value="female">女性 (Female)</option>
+                    <option value="male">男性 (Male)</option>
+                    <option value="diverse">多元認同 / 其他 (Diverse / Non-binary)</option>
                 </select>
             </div>
 
@@ -160,8 +211,17 @@
             </div>
 
             <div class="mb-3">
+                <label class="form-label" style="font-weight: 600; color: #2563eb;">平日運動習慣 (影響熱量精算)</label>
+                <select id="activity" class="form-select" style="border: 2px solid #bfdbfe;">
+                    <option value="sedentary">沒有在運動 (久坐、日常活動少)</option>
+                    <option value="light">每週運動 1-2 次 (散步、輕度伸展)</option>
+                    <option value="moderate">每週運動 3 次以上 (規律健身、有氧有成效)</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
                 <label class="form-label">有無疾病 / 特殊狀況</label>
-                <input type="text" id="disease" class="form-control" placeholder="例如: 無、高血壓 (選填)">
+                <input type="text" id="realDisease" class="form-control" placeholder="例如: 無、高血壓 (選填)">
             </div>
 
             <div class="mb-3">
@@ -185,27 +245,23 @@
             <button class="primary-btn" onclick="saveProfile()">生成我的定制計劃 🚀</button>
         </div>
 
-        <!-- ================= 步驟 2, 3, 4：核心主面板 ================= -->
         <div id="dashboard-section" class="d-none">
             
-            <!-- 每日熱量進度儀表板 -->
             <div class="calorie-dashboard">
                 <div class="d-flex justify-content-between mb-2 text-muted small">
                     <span>每日推薦目標: <strong id="target-kcal-text">1500</strong> kcal</span>
-                    <button class="btn btn-sm btn-link p-0 text-secondary text-decoration-none" onclick="editProfile()">⚙️ 修改數據</button>
+                    <span class="text-secondary text-decoration-none">⚙️ 自動保留中</span>
                 </div>
-                
                 <div class="circle-progress" id="kcal-circle">
                     <div class="circle-inner">
-                        <span class="fw-bold fs-4" id="remaining-kcal">1500</span>
-                        <span class="text-muted" style="font-size: 11px;">剩餘可攝取</span>
+                        <span class="fw-bold fs-4" id="circle-center-kcal">0</span>
+                        <span class="text-muted" style="font-size: 11px;" id="circle-center-label">kcal 已攝取</span>
                     </div>
                 </div>
-
                 <div class="row text-center mt-2">
                     <div class="col border-end">
-                        <div class="small text-muted">已攝取</div>
-                        <div class="fw-bold text-primary" id="total-consumed">0 kcal</div>
+                        <div class="small text-muted">剩餘額度</div>
+                        <div class="fw-bold text-primary" id="remaining-kcal-bottom">1500 kcal</div>
                     </div>
                     <div class="col">
                         <div class="small text-muted">狀態</div>
@@ -214,31 +270,27 @@
                 </div>
             </div>
 
-            <!-- 健康數據分析趨勢圖 -->
-            <div class="section-title">健康數據分析趨勢</div>
-            
-            <!-- 天天紀錄體重 -->
-            <div class="card p-3 mb-3" style="background-color: #f0fdf4; border: 1px solid #bbf7d0;">
-                <h6 class="fw-bold text-success mb-2">⚖️ 今日體重打卡</h6>
-                <div class="input-group input-group-sm">
-                    <input type="number" step="0.1" id="dailyWeight" class="form-control" placeholder="輸入今天體重 (kg)">
-                    <button class="btn btn-success fw-bold" onclick="addWeightRecord()">記錄體重</button>
+            <div class="card p-3 mb-4" style="background-color: #f0fdf4; border: 1px solid #bbf7d0;">
+                <h6 class="fw-bold text-success mb-3">⚖️ 每日體重科學打卡</h6>
+                <div class="row g-2 mb-2">
+                    <div class="col">
+                        <label class="small text-muted mb-1">🌙 前日睡前體重</label>
+                        <input type="number" step="0.1" id="bedtimeWeight" class="form-control form-control-sm" placeholder="睡前 (kg)">
+                    </div>
+                    <div class="col">
+                        <label class="small text-muted mb-1">☀️ 今日起床體重</label>
+                        <input type="number" step="0.1" id="wakeupWeight" class="form-control form-control-sm" placeholder="起床 (kg)">
+                    </div>
                 </div>
+                <button class="btn btn-success btn-sm w-100 fw-bold mt-1" onclick="addDoubleWeightRecord()">同步記錄雙體重</button>
             </div>
 
-            <!-- 趨勢圖表 -->
-            <div class="chart-container">
-                <canvas id="trendChart" style="width: 100%; height: 200px;"></canvas>
-            </div>
-
-            <!-- AI 估算傳送門 -->
             <div class="card p-3 mb-4" style="background-color: #f3e8ff; border: 1px solid #c084fc;">
                 <h6 class="fw-bold" style="color: #6b21a8;">💡 拍照了不知道熱量？</h6>
-                <p class="small text-muted mb-2">點擊下方按鈕自動複製提問詞，前往 Gemini 上傳照片查熱量！</p>
-                <button class="ai-btn" onclick="askGeminiHelper()">1. 複製提問詞並前往 Gemini 🤖</button>
+                <p class="small text-muted mb-2">點擊下方按鈕自動複製提問詞，貼上提問詞+上傳照片.免費用Ai查熱量！</p>
+                <button class="ai-btn" onclick="askGeminiHelper()">1. 複製提問詞並前往GPT或Gemini 🤖</button>
             </div>
 
-            <!-- 新增食物紀錄表單 -->
             <div class="card p-3 mb-4">
                 <h6 class="fw-bold mb-3 text-secondary">2. 把 AI 算好的數字記在這裡：</h6>
                 <div class="mb-2">
@@ -255,84 +307,263 @@
                 <button class="btn btn-sm btn-success w-100 fw-bold" onclick="addFoodRecord()">加入今日日記 ＋</button>
             </div>
 
-            <!-- 食物紀錄顯示清單 -->
             <div class="section-title">今日已吃食物</div>
-            <div id="food-list-container"></div>
-            
-            <button class="btn btn-sm btn-link text-danger w-100 mt-3" onclick="clearAllRecords()">清除所有紀錄重來</button>
+            <div id="food-list-container" class="mb-4"></div>
+
+            <div class="section-title">健康數據分析趨勢</div>
+            <ul class="nav nav-tabs nav-tabs-custom" id="timeTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" onclick="switchChartRange('day')">日紀錄</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" onclick="switchChartRange('week')">週趨勢</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" onclick="switchChartRange('month')">月分析</button>
+                </li>
+            </ul>
+            <div class="chart-container">
+                <canvas id="trendChart" style="width: 100%; height: 200px;"></canvas>
+            </div>
+
+            <div class="history-card-box" id="capture-history-area" style="border: 2px solid #a7f3d0;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold text-success m-0" style="font-size: 1.05rem;">
+                        📋 餐量管理個人紀錄版
+                    </h6>
+                    <span class="badge bg-success" id="share-tag-name">mata專屬</span>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-3 p-2 border-bottom" style="background-color: #f8fafc; border-radius: 10px;">
+                    <span class="small text-muted fw-bold">選擇資料範圍：</span>
+                    <div class="btn-group btn-group-toggle" role="group">
+                        <button type="button" class="btn btn-sm btn-outline-success active" id="btn-card-day" onclick="switchCardRange('day')">今日</button>
+                        <button type="button" class="btn btn-sm btn-outline-success" id="btn-card-week" onclick="switchCardRange('week')">7天週檔</button>
+                        <button type="button" class="btn btn-sm btn-outline-success" id="btn-card-month" onclick="switchCardRange('month')">30天月檔</button>
+                    </div>
+                </div>
+
+                <div id="history-days-container" class="p-1"></div>
+
+                <button class="btn btn-success btn-sm w-100 fw-bold mt-3" style="border-radius: 10px; padding: 8px;" onclick="downloadCardAsImage()">
+                    📸 一鍵下載紀錄圖片檔 (按確定儲存)
+                </button>
+            </div>
+
+            <div class="text-center mb-3">
+                <button class="btn btn-sm btn-link text-danger text-decoration-none small" onclick="clearTodayRecords()">⚠️ 清除今日所有紀錄</button>
+            </div>
+
+            <button class="btn btn-outline-primary btn-sm w-100 fw-bold mb-4" style="border-radius: 12px; padding: 10px;" onclick="goToHome()">
+                🏠 回首頁重新設定個人資訊
+            </button>
         </div>
 
     </div>
 </div>
 
-<!-- 🌟 終極亮點：底部固定的專業全稱版權聲明區 🌟 -->
 <div class="footer-copyright">
-    設計人 <strong>mata老師</strong> | Line官方帳號 <span class="text-primary fw-bold">@814wspg</span> | <strong>可倚服務中心</strong>
+    設計人 <strong>mata老師</strong> | Line官方帳號 <span class="text-primary fw-bold">@814wspg</span> | <strong>可倚</strong>
 </div>
 
 <script>
     const todayStr = new Date().toLocaleDateString([], {month: '2-digit', day: '2-digit'});
     let trendChart = null;
+    let currentRange = 'day';     
+    let currentCardRange = 'day'; 
 
+    // 網頁開啟初始化
     window.onload = function() {
         const tDate = new Date();
         tDate.setMonth(tDate.getMonth() + 3);
         document.getElementById('targetDate').value = tDate.toISOString().split('T')[0];
 
+        const savedProfile = JSON.parse(localStorage.getItem('myProfileData'));
+        if (savedProfile) {
+            document.getElementById('userName').value = savedProfile.userName || 'mata';
+            document.getElementById('birthYear').value = savedProfile.birthYear;
+            document.getElementById('gender').value = savedProfile.gender;
+            document.getElementById('height').value = savedProfile.height;
+            document.getElementById('weight').value = savedProfile.weight;
+            
+            if(savedProfile.activity) document.getElementById('activity').value = savedProfile.activity;
+            if(savedProfile.realDisease) document.getElementById('realDisease').value = savedProfile.realDisease;
+            
+            document.getElementById('allergy').value = savedProfile.allergy;
+            document.getElementById('targetWeight').value = savedProfile.targetWeight;
+            document.getElementById('targetDate').value = savedProfile.targetDate;
+
+            const displayTitle = savedProfile.userName ? `${savedProfile.userName} 的 AI 享瘦日記` : '您的 AI 享瘦日記';
+            document.getElementById('main-app-title').innerText = displayTitle;
+            document.getElementById('share-tag-name').innerText = savedProfile.userName ? `${savedProfile.userName}專屬` : '日光國際';
+
+            document.getElementById('profile-section').classList.add('d-none');
+            document.getElementById('dashboard-section').classList.remove('d-none');
+        }
+
+        checkAndResetDailyCircle();
         renderFoodList();
+        renderHistoryShareCard(); 
         initChart();
     };
 
+    function checkAndResetDailyCircle() {
+        const lastOpenDate = localStorage.getItem('lastOpenDate');
+        if (lastOpenDate && lastOpenDate !== todayStr) {
+            const calculatedTarget = calculateUserTargetKcal();
+            updateCalorieDashboard(0, calculatedTarget);
+        }
+        localStorage.setItem('lastOpenDate', todayStr);
+    }
+
+    function calculateUserTargetKcal() {
+        const birthYear = parseInt(document.getElementById('birthYear').value) || 1995;
+        const gender = document.getElementById('gender').value;
+        const height = parseFloat(document.getElementById('height').value) || 165;
+        const weight = parseFloat(document.getElementById('weight').value) || 65;
+        const activity = document.getElementById('activity').value;
+        
+        const currentYear = new Date().getFullYear();
+        const age = currentYear - birthYear;
+
+        let bmr = 1500;
+        const bmrMale = 66.47 + (13.75 * weight) + (5.0 * height) - (6.75 * age);
+        const bmrFemale = 655.1 + (9.56 * weight) + (1.85 * height) - (4.68 * age);
+
+        if (gender === 'male') bmr = bmrMale;
+        else if (gender === 'female') bmr = bmrFemale;
+        else if (gender === 'diverse') bmr = (bmrMale + bmrFemale) / 2;
+
+        let factor = 1.2;
+        if (activity === 'light') factor = 1.375;
+        else if (activity === 'moderate') factor = 1.55;
+
+        return Math.floor(bmr * factor);
+    }
+
+    // 🌟 全新裝配黑科技：自動將卡片轉換為圖檔下載 🌟
+    function downloadCardAsImage() {
+        const targetArea = document.getElementById('capture-history-area');
+        if (!targetArea) return;
+
+        // 臨時把下載按鈕藏起來，避免被拍進相片裡
+        const downloadBtn = targetArea.querySelector('button');
+        if(downloadBtn) downloadBtn.style.display = 'none';
+
+        alert('正在為您打包轉換精美成果長圖，請稍候...🚀');
+
+        // 調用 html2canvas 拍照大師
+        html2canvas(targetArea, {
+            useCORS: true, 
+            scale: 2, // 雙倍超高解析度，保證傳 LINE 字跡依然銳利不模糊
+            backgroundColor: '#ffffff'
+        }).then(canvas => {
+            // 把按鈕叫回來
+            if(downloadBtn) downloadBtn.style.display = 'block';
+
+            // 將畫布轉為相片下載超連結
+            const imageType = 'image/png';
+            const imageData = canvas.toDataURL(imageType);
+            const downloadLink = document.createElement('a');
+            
+            // 檔名自動套用暱稱與時間（專業規格）
+            const nameInput = document.getElementById('userName').value.trim() || 'Mata團隊';
+            downloadLink.download = `${nameInput}_餐量管理成果報告_${todayStr.replace('/','-')}.png`;
+            downloadLink.href = imageData;
+            downloadLink.dataset.downloadurl = [imageType, downloadLink.download, downloadLink.href].join(':');
+            
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+        }).catch(err => {
+            if(downloadBtn) downloadBtn.style.display = 'block';
+            alert('拍照器啟動失敗，可以直接用手機長按或截圖功能喔！');
+        });
+    }
+
+    function switchCardRange(range) {
+        currentCardRange = range;
+        document.getElementById('btn-card-day').classList.remove('active');
+        document.getElementById('btn-card-week').classList.remove('active');
+        document.getElementById('btn-card-month').classList.remove('active');
+        document.getElementById(`btn-card-${range}`).classList.add('active');
+        renderHistoryShareCard();
+    }
+
+    function goToHome() {
+        document.getElementById('main-app-title').innerText = '我的 AI 享瘦日記';
+        document.getElementById('dashboard-section').classList.add('d-none');
+        document.getElementById('profile-section').classList.remove('d-none');
+    }
+
+    function switchChartRange(range) {
+        currentRange = range;
+        const buttons = document.querySelectorAll('.nav-tabs-custom .nav-link');
+        buttons.forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+        initChart();
+    }
+
     function saveProfile() {
+        const userName = document.getElementById('userName').value.trim();
         const birthYear = document.getElementById('birthYear').value;
+        const gender = document.getElementById('gender').value;
         const height = document.getElementById('height').value;
         const weight = document.getElementById('weight').value;
+        const activity = document.getElementById('activity').value;
+        const realDisease = document.getElementById('realDisease').value;
+        const allergy = document.getElementById('allergy').value;
+        const targetWeight = document.getElementById('targetWeight').value;
+        const targetDate = document.getElementById('targetDate').value;
         
         if(!birthYear || !height || !weight) {
-            alert('請填寫必填的出生年、身高與體重喔！');
+            alert('填寫必填欄位喔！');
             return;
         }
+
+        const profileData = {
+            userName, birthYear, gender, height, weight, activity, realDisease, allergy, targetWeight, targetDate
+        };
+        localStorage.setItem('myProfileData', JSON.stringify(profileData));
+
+        const displayTitle = userName ? `${userName} 的 AI 享瘦日記` : '您的 AI 享瘦日記';
+        document.getElementById('main-app-title').innerText = displayTitle;
+        document.getElementById('share-tag-name').innerText = userName ? `${userName}專屬` : '日光國際';
+
         document.getElementById('profile-section').classList.add('d-none');
         document.getElementById('dashboard-section').classList.remove('d-none');
         
         renderFoodList();
+        renderHistoryShareCard();
         setTimeout(() => { if (trendChart) trendChart.resize(); }, 100);
     }
 
-    function editProfile() {
-        document.getElementById('profile-section').classList.remove('d-none');
-        document.getElementById('dashboard-section').classList.add('d-none');
-    }
+    function addDoubleWeightRecord() {
+        const bedtimeInput = document.getElementById('bedtimeWeight');
+        const wakeupInput = document.getElementById('wakeupWeight');
+        const bedtimeVal = parseFloat(bedtimeInput.value);
+        const wakeupVal = parseFloat(wakeupInput.value);
 
-    function askGeminiHelper() {
-        const allergy = document.getElementById('allergy').value || '無';
-        const disease = document.getElementById('disease').value || '無';
-        const promptText = `請幫我估算這張照片中食物的熱量。\n我的特殊狀況：過敏食物為【${allergy}】、疾病狀況為【${disease}】。\n請用繁體中文直接告訴我：\n1. 食物名稱\n2. 估計總熱量 (kcal)\n3. 碳水、蛋白質、脂肪的大致克數\n並請提醒我這份食物是否適合我的特殊狀況。`;
-
-        navigator.clipboard.writeText(promptText).then(() => {
-            alert('提問詞已自動複製！馬上開啟 Gemini 網站，貼上文字並上傳照片即可！');
-            window.open('https://gemini.google.com/', '_blank');
-        }).catch(err => {
-            alert('複製失敗，請前往 https://gemini.google.com/ 查詢。');
-        });
-    }
-
-    function addWeightRecord() {
-        const weightInput = document.getElementById('dailyWeight');
-        const weightValue = parseFloat(weightInput.value);
-
-        if (!weightValue) {
-            alert('請輸入有效的體重數字喔！');
+        if (!bedtimeVal && !wakeupVal) {
+            alert('請填寫體重！');
             return;
         }
 
-        let weightHistory = JSON.parse(localStorage.getItem('myWeightHistory')) || {};
-        weightHistory[todayStr] = weightValue;
-        localStorage.setItem('myWeightHistory', JSON.stringify(weightHistory));
+        let bedtimeHistory = JSON.parse(localStorage.getItem('myBedtimeHistory')) || {};
+        let wakeupHistory = JSON.parse(localStorage.getItem('myWakeupHistory')) || {};
 
-        alert(`今日體重 ${weightValue} kg 紀錄成功！`);
-        weightInput.value = '';
+        if (bedtimeVal) bedtimeHistory[todayStr] = bedtimeVal;
+        if (wakeupVal) wakeupHistory[todayStr] = wakeupVal;
+
+        localStorage.setItem('myBedtimeHistory', JSON.stringify(bedtimeHistory));
+        localStorage.setItem('myWakeupHistory', JSON.stringify(wakeupHistory));
+
+        alert('雙體重紀錄成功！');
+        bedtimeInput.value = '';
+        wakeupInput.value = '';
+        
         initChart(); 
+        renderHistoryShareCard(); 
     }
 
     function addFoodRecord() {
@@ -341,7 +572,7 @@
         const photoInput = document.getElementById('foodPhoto');
         
         if (!name || !kcal) {
-            alert('請輸入食物名稱與熱量大卡喔！');
+            alert('請填寫完整食物與熱量！');
             return;
         }
 
@@ -371,6 +602,7 @@
         localStorage.setItem('myFoodRecords', JSON.stringify(currentRecords));
 
         renderFoodList();
+        renderHistoryShareCard(); 
         initChart(); 
 
         document.getElementById('foodName').value = '';
@@ -378,37 +610,96 @@
         document.getElementById('foodPhoto').value = '';
     }
 
+    function renderHistoryShareCard() {
+        const container = document.getElementById('history-days-container');
+        if (!container) return;
+
+        const foodRecords = JSON.parse(localStorage.getItem('myFoodRecords')) || [];
+        const bedtimeHistory = JSON.parse(localStorage.getItem('myBedtimeHistory')) || {};
+        const wakeupHistory = JSON.parse(localStorage.getItem('myWakeupHistory')) || {};
+
+        let dateSet = new Set();
+        dateSet.add(todayStr);
+        foodRecords.forEach(r => dateSet.add(r.date));
+        Object.keys(bedtimeHistory).forEach(d => dateSet.add(d));
+        Object.keys(wakeupHistory).forEach(d => dateSet.add(d));
+        let allSortedDates = Array.from(dateSet).sort(); 
+
+        let displayDates = [];
+        if (currentCardRange === 'day') {
+            displayDates = [todayStr]; 
+        } else if (currentCardRange === 'week') {
+            displayDates = allSortedDates.slice(-7); 
+        } else {
+            displayDates = allSortedDates.slice(-30); 
+        }
+
+        let htmlContent = '';
+
+        displayDates.forEach(date => {
+            const dayFoods = foodRecords.filter(r => r.date === date);
+            const bWeight = bedtimeHistory[date] ? `${bedtimeHistory[date]}k` : '-';
+            const wWeight = wakeupHistory[date] ? `${wakeupHistory[date]}k` : '-';
+            const weightDisplay = `🌙${bWeight} / ☀️${wWeight}`;
+
+            let dayTotalKcal = 0;
+            dayFoods.forEach(f => dayTotalKcal += f.kcal);
+
+            let previewImgHtml = `<div style="width:50px; height:50px; background:#e2e8f0; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:10px;">無</div>`;
+            const foodWithPhoto = dayFoods.find(f => f.photo);
+            if (foodWithPhoto) {
+                previewImgHtml = `<img src="${foodWithPhoto.photo}" style="width:50px; height:50px; object-fit:cover; border-radius:8px;">`;
+            }
+
+            let foodSummaryText = dayFoods.map(f => f.name).join('、');
+            if (!foodSummaryText) foodSummaryText = '當日無進食紀錄';
+            if (foodSummaryText.length > 20) foodSummaryText = foodSummaryText.substring(0, 20) + '...';
+
+            htmlContent += `
+                <div class="d-flex align-items-center justify-content-between border-bottom py-2">
+                    ${previewImgHtml}
+                    <div class="flex-grow-1 ms-3">
+                        <div class="fw-bold text-dark" style="font-size:12px;">📅 ${date} | ⚖️ ${weightDisplay}</div>
+                        <div class="text-muted" style="font-size: 11px;">${foodSummaryText}</div>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge bg-light text-primary border border-primary font-monospace small" style="font-size: 11px;">${dayTotalKcal} kcal</span>
+                    </div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = htmlContent;
+    }
+
     function renderFoodList() {
         const container = document.getElementById('food-list-container');
         if (!container) return;
         
         const records = JSON.parse(localStorage.getItem('myFoodRecords')) || [];
+        const todayRecords = records.filter(item => item.date === todayStr);
 
-        if (records.length === 0) {
+        if (todayRecords.length === 0) {
             container.innerHTML = `<p class="text-muted text-center py-3" id="no-data-text">今天還沒有紀錄任何食物喔！</p>`;
-            updateCalorieDashboard(0);
+            const calculatedTarget = calculateUserTargetKcal();
+            updateCalorieDashboard(0, calculatedTarget);
             return;
         }
 
         let htmlContent = '';
         let totalKcal = 0;
 
-        records.forEach(item => {
-            if (item.date === todayStr) {
-                totalKcal += parseInt(item.kcal);
-            }
-            
+        todayRecords.forEach(item => {
+            totalKcal += parseInt(item.kcal);
             let imgHtml = `<div style="width:80px; height:80px; background:#e2e8f0; border-radius:12px; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:12px;">無照片</div>`;
-            if (item.photo) {
-                imgHtml = `<img src="${item.photo}" class="food-img">`;
-            }
+            if (item.photo) imgHtml = `<img src="${item.photo}" class="food-img">`;
 
             htmlContent += `
                 <div class="food-item">
                     ${imgHtml}
                     <div class="flex-grow-1 ms-3">
                         <div class="fw-bold text-dark">${item.name}</div>
-                        <div class="text-muted small">日期: ${item.date} | 時間：${item.time}</div>
+                        <div class="text-muted small">時間：${item.time}</div>
                     </div>
                     <div class="text-end">
                         <span class="badge bg-primary fs-6">${item.kcal} kcal</span>
@@ -418,36 +709,50 @@
         });
 
         container.innerHTML = htmlContent;
-        updateCalorieDashboard(totalKcal);
+        const calculatedTarget = calculateUserTargetKcal();
+        updateCalorieDashboard(totalKcal, calculatedTarget);
     }
 
-    function updateCalorieDashboard(totalConsumed = 0) {
-        const targetKcal = 1500;
-        
+    function askGeminiHelper() {
+        const allergy = document.getElementById('allergy').value || '無';
+        const realDisease = document.getElementById('realDisease').value || '無';
+        const promptText = `請幫我估算這張照片中食物的熱量。\n我的特殊狀況：過敏食物為【${allergy}】、疾病狀況為【${realDisease}】。\n請用繁體中文直接告訴我：\n1. 食物名稱\n2. 估計總熱量 (kcal)\n3. 碳水、蛋白質、脂肪的大致克數\n並請提醒我這份食物是否適合我的特殊狀況。`;
+
+        navigator.clipboard.writeText(promptText).then(() => {
+            alert('提問詞已自動複製！馬上開啟 Gemini 網站，貼上文字並上傳照片即可！');
+            window.open('https://gemini.google.com/', '_blank');
+        });
+    }
+
+    function updateCalorieDashboard(totalConsumed = 0, targetKcal = 1500) {
         const targetText = document.getElementById('target-kcal-text');
-        const consumedText = document.getElementById('total-consumed');
         if (targetText) targetText.innerText = targetKcal;
-        if (consumedText) consumedText.innerText = totalConsumed + ' kcal';
 
         const remaining = targetKcal - totalConsumed;
-        const remainingElement = document.getElementById('remaining-kcal');
+        const circleCenterKcal = document.getElementById('circle-center-kcal');
+        const circleCenterLabel = document.getElementById('circle-center-label');
+        const remainingBottom = document.getElementById('remaining-kcal-bottom');
         const statusElement = document.getElementById('diet-status');
         const circleElement = document.getElementById('kcal-circle');
 
-        if (!remainingElement || !statusElement || !circleElement) return;
+        if (!circleCenterKcal || !remainingBottom || !statusElement || !circleElement) return;
+
+        circleCenterKcal.innerText = totalConsumed;
 
         let percentage = (totalConsumed / targetKcal) * 360;
         if (percentage > 360) percentage = 360;
 
         if (remaining >= 0) {
-            remainingElement.innerText = remaining;
-            remainingElement.style.color = '#1e3a8a';
+            remainingBottom.innerText = remaining + ' kcal';
+            remainingBottom.style.color = '#3b82f6';
+            circleCenterKcal.style.color = '#1e3a8a';
+            circleCenterLabel.innerText = 'kcal 已攝取';
             circleElement.style.background = `conic-gradient(#3b82f6 ${percentage}deg, #e2e8f0 ${percentage}deg)`;
             
             if (totalConsumed === 0) {
                 statusElement.innerText = '尚未進食';
                 statusElement.style.color = '#6b7280';
-            } else if (totalConsumed < 1200) {
+            } else if (totalConsumed < (targetKcal * 0.75)) {
                 statusElement.innerText = '低於基代⚠️';
                 statusElement.style.color = '#d97706';
             } else {
@@ -455,8 +760,10 @@
                 statusElement.style.color = '#059669';
             }
         } else {
-            remainingElement.innerText = `+${Math.abs(remaining)}`;
-            remainingElement.style.color = '#dc2626';
+            remainingBottom.innerText = '超標 ' + Math.abs(remaining) + ' kcal';
+            remainingBottom.style.color = '#dc2626';
+            circleCenterKcal.style.color = '#dc2626';
+            circleCenterLabel.innerText = 'kcal 爆卡啦';
             statusElement.innerText = '卡路里超標 ❌';
             statusElement.style.color = '#dc2626';
             circleElement.style.background = `conic-gradient(#dc2626 360deg, #e2e8f0 0deg)`;
@@ -469,35 +776,39 @@
         
         const ctx = canvas.getContext('2d');
         const foodRecords = JSON.parse(localStorage.getItem('myFoodRecords')) || [];
-        const weightHistory = JSON.parse(localStorage.getItem('myWeightHistory')) || {};
+        const bedtimeHistory = JSON.parse(localStorage.getItem('myBedtimeHistory')) || {};
+        const wakeupHistory = JSON.parse(localStorage.getItem('myWakeupHistory')) || {};
         
         let dateSet = new Set();
         dateSet.add(todayStr); 
         foodRecords.forEach(r => dateSet.add(r.date));
-        Object.keys(weightHistory).forEach(d => dateSet.add(d));
-        let sortedDates = Array.from(dateSet).sort().slice(-7); 
+        Object.keys(bedtimeHistory).forEach(d => dateSet.add(d));
+        Object.keys(wakeupHistory).forEach(d => dateSet.add(d));
+        let allSortedDates = Array.from(dateSet).sort(); 
 
-        let calorieData = sortedDates.map(date => {
+        let displayDates = [];
+        if (currentRange === 'day') displayDates = allSortedDates.slice(-5);
+        else if (currentRange === 'week') displayDates = allSortedDates.slice(-14);
+        else displayDates = allSortedDates.slice(-30);
+
+        let calorieData = displayDates.map(date => {
             let dayTotal = 0;
-            foodRecords.forEach(r => {
-                if(r.date === date) dayTotal += r.kcal;
-            });
+            foodRecords.forEach(r => { if(r.date === date) dayTotal += r.kcal; });
             return dayTotal;
         });
 
-        let weightData = sortedDates.map(date => weightHistory[date] || null);
+        let bedtimeData = displayDates.map(date => bedtimeHistory[date] || null);
+        let wakeupData = displayDates.map(date => wakeupHistory[date] || null);
 
-        if (trendChart) {
-            trendChart.destroy();
-        }
+        if (trendChart) trendChart.destroy();
 
         trendChart = new Chart(ctx, {
             type: 'line', 
             data: {
-                labels: sortedDates, 
+                labels: displayDates, 
                 datasets: [
                     {
-                        label: '每日攝取熱量 (kcal)',
+                        label: '攝取熱量 (kcal)',
                         data: calorieData,
                         borderColor: '#3b82f6',
                         backgroundColor: 'rgba(59, 130, 246, 0.1)',
@@ -505,8 +816,17 @@
                         tension: 0.3
                     },
                     {
-                        label: '體重紀錄 (kg)',
-                        data: weightData,
+                        label: '睡前體重 (kg)',
+                        data: bedtimeData,
+                        borderColor: '#ea580c',
+                        backgroundColor: 'transparent',
+                        yAxisID: 'y1',
+                        tension: 0.3,
+                        spanGaps: true
+                    },
+                    {
+                        label: '起床體重 (kg)',
+                        data: wakeupData,
                         borderColor: '#10b981',
                         backgroundColor: 'transparent',
                         yAxisID: 'y1',
@@ -519,30 +839,34 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: {
-                    y: {
-                        type: 'linear',
-                        display: true,
-                        position: 'left',
-                        title: { display: true, text: '熱量 (kcal)' }
-                    },
-                    y1: {
-                        type: 'linear',
-                        display: true,
-                        position: 'right',
-                        title: { display: true, text: '體重 (kg)' },
-                        grid: { drawOnChartArea: false } 
-                    }
+                    y: { type: 'linear', display: true, position: 'left', title: { display: true, text: '熱量' } },
+                    y1: { type: 'linear', display: true, position: 'right', title: { display: true, text: '體重 (kg)' }, grid: { drawOnChartArea: false } }
                 }
             }
         });
     }
 
-    function clearAllRecords() {
-        if(confirm('確定要清除手機抽屜裡的所有飲食照片和紀錄嗎？')) {
-            localStorage.removeItem('myFoodRecords');
-            localStorage.removeItem('myWeightHistory');
+    function clearTodayRecords() {
+        if(confirm('確定要清空今天嗎？')) {
+            let currentRecords = JSON.parse(localStorage.getItem('myFoodRecords')) || [];
+            let historicalRecords = currentRecords.filter(item => item.date !== todayStr);
+            localStorage.setItem('myFoodRecords', JSON.stringify(historicalRecords));
+            
+            let bedtimeHistory = JSON.parse(localStorage.getItem('myBedtimeHistory')) || {};
+            let wakeupHistory = JSON.parse(localStorage.getItem('myWakeupHistory')) || {};
+            delete bedtimeHistory[todayStr];
+            delete wakeupHistory[todayStr];
+            localStorage.setItem('myBedtimeHistory', JSON.stringify(bedtimeHistory));
+            localStorage.setItem('myWakeupHistory', JSON.stringify(wakeupHistory));
+            
             renderFoodList();
+            renderHistoryShareCard();
             initChart();
+            
+            const circleElement = document.getElementById('kcal-circle');
+            if (circleElement) circleElement.style.background = `conic-gradient(#3b82f6 0deg, #e2e8f0 0deg)`;
+            const calculatedTarget = calculateUserTargetKcal();
+            updateCalorieDashboard(0, calculatedTarget);
         }
     }
 </script>
