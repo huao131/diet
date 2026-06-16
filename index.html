@@ -4,8 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>我的 AI 享瘦日記 - 餐量管理個人紀錄版</title>
+    <!-- Bootstrap 美化樣式庫 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Chart.js 圖表大師 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- html2canvas 卡片轉相片黑科技 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body {
@@ -129,6 +132,7 @@
             border: 1px solid #dee2e6;
             border-bottom: 2px solid #f8fafc;
         }
+        /* 頁面底部的版權旗幟 */
         .footer-copyright {
             text-align: center;
             padding: 8px 10px;
@@ -226,6 +230,7 @@
 <div class="container" style="padding-bottom: 30px;">
     <div class="app-container">
         
+        <!-- 權威大頭貼與標題區 -->
         <div class="text-center mb-4">
             <h2 class="fw-bold m-0" style="color: #1e3a8a; font-size: 1.65rem;" id="main-app-title">我的 AI 享瘦日記</h2>
             <div class="mt-1 fw-bold text-success" style="font-size: 0.88rem; letter-spacing: 1px;">
@@ -233,6 +238,7 @@
             </div>
         </div>
         
+        <!-- ================= 🌟 頁面 A：飲食打卡 ================= -->
         <div id="page-diet" class="d-none">
             <div class="calorie-dashboard">
                 <div class="d-flex justify-content-between mb-2 text-muted small">
@@ -303,6 +309,7 @@
         </div>
 
 
+        <!-- ================= 🌟 頁面 B：數據報表 ================= -->
         <div id="page-reports" class="d-none">
             <div class="section-title">大健康趨勢分析圖</div>
             <div class="chart-container">
@@ -373,6 +380,7 @@
         </div>
 
 
+        <!-- ================= 🌟 頁面 C：個人資訊 ================= -->
         <div id="page-profile" class="d-block">
             <div class="privacy-alert p-3 mb-4 text-center">
                 🔒 <strong>安心聲明</strong>：本系統所記錄的所有數據與照片，<strong>完全儲存在您自己的手機本地瀏覽器中</strong>，絕不上傳 any 外部伺服器，不會有任何隱私外洩的風險，請放心體驗！
@@ -458,20 +466,23 @@
 
             <button class="primary-btn mb-4" onclick="saveProfile()">儲存並生成我的定制計劃 🚀</button>
 
+            <!-- 🌟 核心修正與大字優化：清除資訊防誤解大鈕 🌟 -->
             <div class="text-center pt-3 border-top">
-                <button class="btn btn-sm btn-outline-danger fw-bold px-3 py-2" style="border-radius: 10px; font-size: 0.8rem;" onclick="factoryResetAllData()">
-                    ⚠️ 清除本機所有數據並重新設定 (重置系統)
+                <button class="btn btn-sm btn-outline-danger fw-bold px-3 py-2" style="border-radius: 10px; font-size: 0.85rem;" onclick="factoryResetAllData()">
+                    ⚠️ 清除本機餐量管理資訊並重新設定
                 </button>
             </div>
         </div>
 
+        <!-- 🌟 修正 2：底部常駐版權宣告全新更名引流線 🌟 -->
         <div class="footer-copyright">
-            設計人 <strong>mata老師</strong> | Line官方帳號 <span class="text-primary fw-bold">@814wspg</span> | <strong>可倚</strong>
+            設計人<strong>mata老師</strong> | LINE官方帳號搜尋: <span class="text-primary fw-bold">Ai168百業數位平台</span>
         </div>
 
     </div>
 </div>
 
+<!-- 底部常駐App導覽切換列 -->
 <div class="app-bottom-nav d-none" id="main-app-navigation">
     <button class="nav-item-box" id="tab-diet" onclick="switchMainPage('diet')">
         <span class="nav-icon">🍳</span>飲食打卡
@@ -495,7 +506,6 @@
         tDate.setMonth(tDate.getMonth() + 3);
         document.getElementById('targetDate').value = tDate.toISOString().split('T')[0];
 
-        // 讀取舊有快取資料以供填入欄位
         const savedProfile = JSON.parse(localStorage.getItem('myProfileData'));
         if (savedProfile) {
             document.getElementById('userName').value = savedProfile.userName || 'mata';
@@ -513,10 +523,8 @@
             document.getElementById('targetWeight').value = savedProfile.targetWeight;
             document.getElementById('targetDate').value = savedProfile.targetDate;
 
-            // 🌟 PM 關鍵體驗修正：就算有舊資料，首頁載入時也必須先降落在「個人設定」分頁
             switchMainPage('profile');
         } else {
-            // 完全沒有填過資料的新學員，隱藏下方導覽列，強迫第一步在設定頁註冊
             document.getElementById('main-app-navigation').classList.add('d-none');
         }
 
@@ -526,12 +534,19 @@
         initChart();
     };
 
-    // 🌟 核心新增：一鍵清除手機快取回歸原廠初始狀態
+    // 🌟 修正 1：重置大腦邏輯精雕（徹底消除學員對手機重置的恐慌！） 🌟
     function factoryResetAllData() {
-        if (!confirm('🚨 您即將啟動原廠重置！\n\n這將會徹底抹除您這台手機上記錄的所有飲食日記、照片、前日睡前/今日起床雙體重以及個人資料。\n\n確定要完全清空重新開始嗎？')) return;
+        // 第一行：說明是資訊重置並保留提示
+        const msg1 = "⚠️ 您即將啟動餐量管理資訊重置。\n這將會徹底抹除您這台手機上記錄的所有飲食日記、照片、前日睡前/今日起床雙體重以及個人數據。\n\n";
+        // 第二行：強力定心丸
+        const msg2 = "💡 資訊重置不會影響手機其他所有APP的資訊。\n\n";
+        // 第三行：最後確認
+        const msg3 = "確定要清空個人數據重新開始嗎？";
+        
+        if (!confirm(msg1 + msg2 + msg3)) return;
         
         localStorage.clear();
-        alert('✨ 本機所有大數據快取已徹底清空！網頁將自動重新載入。');
+        alert('✨ 餐量管理數據已安全清空！網頁將自動重置載入。');
         window.location.reload();
     }
 
@@ -544,7 +559,6 @@
         document.getElementById('tab-reports').classList.remove('active');
         document.getElementById('tab-profile').classList.remove('active');
 
-        // 只要有切換動作，就代表系統已被儲存啟用，確保導覽總機現身
         document.getElementById('main-app-navigation').classList.remove('d-none');
 
         if (pageName === 'diet') {
@@ -727,7 +741,6 @@
         };
         localStorage.setItem('myProfileData', JSON.stringify(profileData));
 
-        // 儲存成功後，帶領學員前往打卡主戰場
         switchMainPage('diet');
         
         renderFoodList();
@@ -1025,98 +1038,6 @@
             window.open('https://gemini.google.com/', '_blank');
         }).catch(err => {
             alert('複製失敗，請手動選填。');
-        });
-    }
-
-    function initChart() {
-        const ctx = document.getElementById('trendChart');
-        if (!ctx) return;
-
-        const foodRecords = JSON.parse(localStorage.getItem('myFoodRecords')) || [];
-        const bedtimeHistory = JSON.parse(localStorage.getItem('myBedtimeHistory')) || {};
-        const wakeupHistory = JSON.parse(localStorage.getItem('myWakeupHistory')) || {};
-
-        let dateSet = new Set();
-        dateSet.add(todayStr);
-        foodRecords.forEach(r => dateSet.add(r.date));
-        Object.keys(bedtimeHistory).forEach(d => dateSet.add(d));
-        Object.keys(wakeupHistory).forEach(d => dateSet.add(d));
-        let sortedDates = Array.from(dateSet).sort();
-
-        if (currentRange === 'day') {
-            sortedDates = [todayStr];
-        } else if (currentRange === 'week') {
-            sortedDates = sortedDates.slice(-7);
-        } else if (currentRange === 'month') {
-            sortedDates = sortedDates.slice(-30);
-        }
-
-        let kcalData = [];
-        let bedtimeData = [];
-        let wakeupData = [];
-
-        sortedDates.forEach(d => {
-            const dayFoods = foodRecords.filter(r => r.date === d);
-            const totalKcal = dayFoods.reduce((sum, item) => sum + item.kcal, 0);
-            kcalData.push(totalKcal);
-            bedtimeData.push(bedtimeHistory[d] || null);
-            wakeupData.push(wakeupHistory[d] || null);
-        });
-
-        if (trendChart) trendChart.destroy();
-
-        trendChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: sortedDates,
-                datasets: [
-                    {
-                        label: '攝取熱量 (kcal)',
-                        data: kcalData,
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        yAxisID: 'yKcal',
-                        tension: 0.3,
-                        borderWidth: 3
-                    },
-                    {
-                        label: '睡前體重 (kg)',
-                        data: bedtimeData,
-                        borderColor: '#9333ea',
-                        backgroundColor: 'transparent',
-                        yAxisID: 'yWeight',
-                        tension: 0.2,
-                        borderDash: [5, 5]
-                    },
-                    {
-                        label: '起床體重 (kg)',
-                        data: wakeupData,
-                        borderColor: '#10b981',
-                        backgroundColor: 'transparent',
-                        yAxisID: 'yWeight',
-                        tension: 0.2
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    yKcal: {
-                        type: 'linear',
-                        position: 'left',
-                        title: { display: true, text: '熱量 (kcal)', font: { weight: 'bold' } },
-                        grid: { drawOnChartArea: false }
-                    },
-                    yWeight: {
-                        type: 'linear',
-                        position: 'right',
-                        title: { display: true, text: '體重 (kg)', font: { weight: 'bold' } },
-                        suggestedMin: 40,
-                        suggestedMax: 100
-                    }
-                }
-            }
         });
     }
 </script>
