@@ -4,19 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>我的 AI 享瘦日記 - 餐量管理個人紀錄版</title>
+    <!-- Bootstrap 美化樣式庫 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Chart.js 圖表大師 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- html2canvas 卡片轉相片黑科技 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body {
             background-color: #f4f7fe;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: #333;
-            padding-bottom: 70px;
+            padding-bottom: 90px; /* 為底部常駐導覽列留出安全空間 */
         }
         .app-container {
             max-width: 500px;
-            margin: 30px auto;
+            margin: 20px auto;
             background: white;
             border-radius: 24px;
             box-shadow: 0 8px 24px rgba(0,0,0,0.05);
@@ -24,16 +27,19 @@
             position: relative;
         }
         .primary-btn {
-            background-color: #3b82f6;
+            background-color: #10b981;
             color: white;
             border: none;
             border-radius: 12px;
             padding: 12px;
             width: 100%;
             font-weight: bold;
+            font-size: 1.05rem;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+            transition: all 0.2s;
         }
         .primary-btn:hover {
-            background-color: #2563eb;
+            background-color: #059669;
             color: white;
         }
         .ai-btn {
@@ -54,7 +60,7 @@
             font-weight: bold;
             color: #1e3a8a;
             margin-bottom: 15px;
-            border-left: 4px solid #3b82f6;
+            border-left: 4px solid #10b981;
             padding-left: 10px;
         }
         .food-img {
@@ -128,19 +134,13 @@
         }
         .footer-copyright {
             text-align: center;
-            padding: 12px 10px;
-            font-size: 0.85rem;
+            padding: 8px 10px;
+            font-size: 0.8rem;
             color: #64748b;
             background-color: #ffffff;
             border-top: 1px solid #e2e8f0;
-            position: fixed;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100%;
-            max-width: 500px;
-            z-index: 999;
-            box-shadow: 0 -4px 12px rgba(0,0,0,0.04);
+            margin-top: 20px;
+            border-radius: 12px;
         }
         .privacy-alert {
             background-color: #fff7ed;
@@ -154,8 +154,23 @@
             border: 1px solid #a7f3d0;
             border-radius: 20px;
             padding: 18px;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+        }
+        .data-management-box {
+            background-color: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 20px;
+            padding: 18px;
+            margin-bottom: 20px;
+        }
+        .good-news-box {
+            background: linear-gradient(135deg, #fef2f2 0%, #fff7ed 100%);
+            border: 1px solid #fecaca;
+            border-radius: 20px;
+            padding: 18px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 12px rgba(254,202,202,0.15);
         }
         .btn-group-toggle .btn {
             font-size: 0.75rem;
@@ -163,88 +178,67 @@
             padding: 2px 10px;
             border-radius: 8px;
         }
+        .delete-btn-single {
+            background: none;
+            border: none;
+            color: #ef4444;
+            font-size: 0.85rem;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 6px;
+        }
+        .app-bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 500px;
+            background-color: #ffffff;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            z-index: 1000;
+            box-shadow: 0 -4px 16px rgba(0,0,0,0.06);
+        }
+        .nav-item-box {
+            text-align: center;
+            flex-grow: 1;
+            color: #64748b;
+            font-weight: bold;
+            font-size: 0.85rem;
+            cursor: pointer;
+            border: none;
+            background: none;
+            transition: all 0.2s;
+        }
+        .nav-item-box.active {
+            color: #3b82f6;
+        }
+        .nav-icon {
+            font-size: 1.3rem;
+            display: block;
+            margin-bottom: 2px;
+        }
     </style>
 </head>
 <body>
 
-<div class="container">
+<div class="container" style="padding-bottom: 30px;">
     <div class="app-container">
-        <h2 class="text-center mb-4 fw-bold" style="color: #1e3a8a;" id="main-app-title">我的 AI 享瘦日記</h2>
         
-        <div id="profile-section">
-            <div class="privacy-alert p-3 mb-4 text-center">
-                🔒 <strong>安心聲明</strong>：本系統所記錄的所有數據與照片，<strong>完全儲存在您自己的手機本地瀏覽器中</strong>，絕不上傳任何外部伺服器，不會有任何隱私外洩的風險，請放心體驗！
+        <!-- 權威大頭貼與標題區 -->
+        <div class="text-center mb-4">
+            <h2 class="fw-bold m-0" style="color: #1e3a8a; font-size: 1.65rem;" id="main-app-title">我的 AI 享瘦日記</h2>
+            <div class="mt-1 fw-bold text-success" style="font-size: 0.88rem; letter-spacing: 1px;">
+                📋 IAE國際餐量管理師指導項目
             </div>
-
-            <div class="section-title">第一步：輸入身體基本數據</div>
-            
-            <div class="mb-3">
-                <label class="form-label" style="font-weight: 600; color: #1e3a8a;">您的暱稱 / 稱呼</label>
-                <input type="text" id="userName" class="form-control" placeholder="例如: mata" value="mata">
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label">出生年份 (西元)</label>
-                <input type="number" id="birthYear" class="form-control" value="1995">
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label">性別認同</label>
-                <select id="gender" class="form-select">
-                    <option value="female">女性 (Female)</option>
-                    <option value="male">男性 (Male)</option>
-                    <option value="diverse">多元認同 / 其他 (Diverse / Non-binary)</option>
-                </select>
-            </div>
-
-            <div class="row mb-3">
-                <div class="col">
-                    <label class="form-label">身高 (cm)</label>
-                    <input type="number" id="height" class="form-control" value="165">
-                </div>
-                <div class="col">
-                    <label class="form-label">目前體重 (kg)</label>
-                    <input type="number" id="weight" class="form-control" value="65">
-                </div>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label" style="font-weight: 600; color: #2563eb;">平日運動習慣 (影響熱量精算)</label>
-                <select id="activity" class="form-select" style="border: 2px solid #bfdbfe;">
-                    <option value="sedentary">沒有在運動 (久坐、日常活動少)</option>
-                    <option value="light">每週運動 1-2 次 (散步、輕度伸展)</option>
-                    <option value="moderate">每週運動 3 次以上 (規律健身、有氧有成效)</option>
-                </select>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label">有無疾病 / 特殊狀況</label>
-                <input type="text" id="realDisease" class="form-control" placeholder="例如: 無、高血壓 (選填)">
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label">過敏食物</label>
-                <input type="text" id="allergy" class="form-control" placeholder="例如: 花生、海鮮 (選填)">
-            </div>
-
-            <div class="section-title mt-4">第二步：設定減重目標</div>
-
-            <div class="row mb-4">
-                <div class="col">
-                    <label class="form-label">目標減重 (kg)</label>
-                    <input type="number" id="targetWeight" class="form-control" value="5">
-                </div>
-                <div class="col">
-                    <label class="form-label">預期達成日期</label>
-                    <input type="date" id="targetDate" class="form-control">
-                </div>
-            </div>
-
-            <button class="primary-btn" onclick="saveProfile()">生成我的定制計劃 🚀</button>
         </div>
-
-        <div id="dashboard-section" class="d-none">
-            
+        
+        <!-- ================= 🌟 頁面 A：飲食打卡（核心面板分頁） ================= -->
+        <div id="page-diet" class="d-none">
             <div class="calorie-dashboard">
                 <div class="d-flex justify-content-between mb-2 text-muted small">
                     <span>每日推薦目標: <strong id="target-kcal-text">1500</strong> kcal</span>
@@ -286,7 +280,7 @@
             <div class="card p-3 mb-4" style="background-color: #f3e8ff; border: 1px solid #c084fc;">
                 <h6 class="fw-bold" style="color: #6b21a8;">💡 拍照了不知道熱量？</h6>
                 <p class="small text-muted mb-2">點擊下方按鈕自動複製提問詞，前往Ai軟體 貼上並上傳照片,用Ai查熱量！</p>
-                <button class="ai-btn" onclick="askGeminiHelper()">1.複製提問詞並前往 GPT或Gemini 🤖</button>
+                <button class="ai-btn" onclick="askGeminiHelper()">1. 複製提問詞並前往 GPT或Gemini 🤖</button>
             </div>
 
             <div class="card p-3 mb-4">
@@ -306,10 +300,22 @@
             </div>
 
             <div class="section-title">今日已吃食物</div>
-            <div id="food-list-container" class="mb-4"></div>
+            <div id="food-list-container" class="mb-2"></div>
+            
+            <div class="text-center mt-3">
+                <button class="btn btn-sm btn-link text-danger text-decoration-none small" onclick="clearTodayRecords()">⚠️ 清除今日所有紀錄</button>
+            </div>
+        </div>
 
-            <div class="section-title">健康數據分析趨勢</div>
-            <ul class="nav nav-tabs nav-tabs-custom" id="timeTab" role="tablist">
+
+        <!-- ================= 🌟 頁面 B：數據報表（動態公告欄大腦） ================= -->
+        <div id="page-reports" class="d-none">
+            <!-- 數據曲線圖 -->
+            <div class="section-title">大健康趨勢分析圖</div>
+            <div class="chart-container">
+                <canvas id="trendChart" style="width: 100%; height: 200px;"></canvas>
+            </div>
+            <ul class="nav nav-tabs nav-tabs-custom mb-4" id="timeTab" role="tablist">
                 <li class="nav-item" role="presentation">
                     <button class="nav-link active" onclick="switchChartRange('day')">日紀錄</button>
                 </li>
@@ -320,16 +326,17 @@
                     <button class="nav-link" onclick="switchChartRange('month')">月分析</button>
                 </li>
             </ul>
-            <div class="chart-container">
-                <canvas id="trendChart" style="width: 100%; height: 200px;"></canvas>
-            </div>
 
-            <div class="history-card-box" id="capture-history-area" style="border: 2px solid #a7f3d0;">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h6 class="fw-bold text-success m-0" style="font-size: 1.05rem;">
+            <!-- 卡片 A：餐量管理個人紀錄版（見證長圖卡） -->
+            <div class="history-card-box" id="capture-history-area">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="fw-bold text-success m-0" style="font-size: 1.05rem; letter-spacing: 0.5px;">
                         📋 餐量管理個人紀錄版
                     </h6>
-                    <span class="badge bg-success" id="share-tag-name">mata專屬</span>
+                    <span class="badge bg-success" id="share-tag-name">日光國際</span>
+                </div>
+                <div class="text-muted mb-3" style="font-size: 0.75rem;">
+                    ✨ 點擊下方下載長圖發群組，展現你的享瘦餐量成果！
                 </div>
 
                 <div class="d-flex justify-content-between align-items-center mb-3 p-2 border-bottom" style="background-color: #f8fafc; border-radius: 10px;">
@@ -344,24 +351,145 @@
                 <div id="history-days-container" class="p-1"></div>
 
                 <button class="btn btn-success btn-sm w-100 fw-bold mt-3" style="border-radius: 10px; padding: 8px;" onclick="downloadCardAsImage()">
-                    📸 一鍵下載本圖表成果檔 (可直接分享)
+                    📸 一鍵下載本圖表成果長圖
                 </button>
             </div>
 
-            <div class="text-center mb-3">
-                <button class="btn btn-sm btn-link text-danger text-decoration-none small" onclick="clearTodayRecords()">⚠️ 清除今日所有紀錄</button>
+            <!-- 卡片 B：日光國際大數據管理中心 -->
+            <div class="data-management-box">
+                <h6 class="fw-bold text-primary mb-2" style="font-size: 1.05rem;">
+                    📊 日光國際大數據管理中心
+                </h6>
+                <div class="text-muted mb-3" style="font-size: 0.78rem; line-height: 1.4;">
+                    教練與管理端專用。一鍵將學員本地核心文字大數據打包成標準表格檔案。
+                </div>
+                <button class="btn btn-primary btn-sm w-100 fw-bold" style="border-radius: 10px; padding: 8px; background-color: #0284c7; border: none;" onclick="exportDataToExcel()">
+                    📥 匯出 Excel 大數據管理報表 (.csv)
+                </button>
             </div>
 
-            <button class="btn btn-outline-primary btn-sm w-100 fw-bold mb-4" style="border-radius: 12px; padding: 10px;" onclick="goToHome()">
-                🏠 回首頁重新設定個人資訊
-            </button>
+            <!-- 🌟 核心進化：[好康報報] 最新文案與專屬官方 LINE 連結完美封裝版 🌟 -->
+            <div class="good-news-box">
+                <h6 class="fw-bold mb-2" style="color: #ea580c; font-size: 1.05rem;">
+                    🎁 [好康報報] 日光國際專屬學員福利
+                </h6>
+                <div class="text-dark mb-3" style="font-size: 0.85rem; line-height: 1.5; text-align: justify;">
+                    恭喜您成功啟動餐量管理！現在點擊下方按鈕加入 日光國際 LINE 官方帳號，並回傳您的日記暱稱，即可免費預約乙次【INBODY1對1 內臟脂肪科學代謝率深度解構評估】並加碼領取【日光AI 健康大師助理！】名額有限，立即加入！
+                </div>
+                <!-- 🌟 連結完美精雕為：https://lin.ee/vmMZ5kf 🌟 -->
+                <a href="https://lin.ee/vmMZ5kf" target="_blank" class="btn btn-sm w-100 fw-bold text-white text-center" style="background-color: #ea580c; border: none; border-radius: 10px; padding: 8px; font-size: 0.85rem; box-shadow: 0 4px 10px rgba(234, 88, 12, 0.2);">
+                    🔥 點擊一鍵加入官方 LINE 領取好康 ➔
+                </a>
+            </div>
+        </div>
+
+
+        <!-- ================= 🌟 頁面 C：個人資訊（純淨專業問卷頁） ================= -->
+        <div id="page-profile" class="d-block">
+            <div class="privacy-alert p-3 mb-4 text-center">
+                🔒 <strong>安心聲明</strong>：本系統所記錄的所有數據與照片，<strong>完全儲存在您自己的手機本地瀏覽器中</strong>，絕不上傳 any 外部伺服器，不會有任何隱私外洩的風險，請放心體驗！
+            </div>
+
+            <div class="section-title">第一步：輸入身體基本數據</div>
+            
+            <div class="mb-3">
+                <label class="form-label" style="font-weight: 600; color: #1e3a8a;">您的暱稱 / 稱呼</label>
+                <input type="text" id="userName" class="form-control" placeholder="例如: mata" value="mata">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">出生年份 (西元)</label>
+                <input type="number" id="birthYear" class="form-control" value="1995">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">性別認同</label>
+                <select id="gender" class="form-select">
+                    <option value="female">女性 (Female)</option>
+                    <option value="male">男性 (Male)</option>
+                    <option value="diverse">多元認同 / 其他 (Diverse / Non-binary)</option>
+                </select>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col">
+                    <label class="form-label">身高 (cm)</label>
+                    <input type="number" id="height" class="form-control" value="165">
+                </div>
+                <div class="col">
+                    <label class="form-label">目前體重 (kg)</label>
+                    <input type="number" id="weight" class="form-control" value="65">
+                </div>
+            </div>
+
+            <div class="row mb-1">
+                <div class="col">
+                    <label class="form-label text-success" style="font-weight: 600;">目前體脂率 (%)</label>
+                    <input type="number" step="0.1" id="bodyFat" class="form-control" placeholder="選填">
+                </div>
+                <div class="col">
+                    <label class="form-label text-success" style="font-weight: 600;">內臟脂肪等級</label>
+                    <input type="number" step="0.5" id="visceralFat" class="form-control" placeholder="選填">
+                </div>
+            </div>
+            <div class="text-muted mb-3" style="font-size: 0.72rem; padding-left: 2px;">
+                * 💡 提示：體脂與內臟脂肪為 IAE國際餐量管理科學減重黃金底標，建議選填，匯出 Excel 報表更全面。
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">平日運動習慣 (影響熱量精算)</label>
+                <select id="activity" class="form-select" style="border: 2px solid #bfdbfe;">
+                    <option value="sedentary">沒有在運動 (久坐、日常活動少)</option>
+                    <option value="light">每週運動 1-2 次 (散步、輕度伸展)</option>
+                    <option value="moderate">每週運動 3 次以上 (規律健身、有氧有成效)</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">有無疾病 / 特殊狀況</label>
+                <input type="text" id="realDisease" class="form-control" placeholder="例如: 無、高血壓 (選填)">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">過敏食物</label>
+                <input type="text" id="allergy" class="form-control" placeholder="例如: 花生、海鮮 (選填)">
+            </div>
+
+            <div class="section-title mt-4">第二步：設定減重目標</div>
+
+            <div class="row mb-4">
+                <div class="col">
+                    <label class="form-label">目標減重 (kg)</label>
+                    <input type="number" id="targetWeight" class="form-control" value="5">
+                </div>
+                <div class="col">
+                    <label class="form-label">預期達成日期</label>
+                    <input type="date" id="targetDate" class="form-control">
+                </div>
+            </div>
+
+            <button class="primary-btn" onclick="saveProfile()">儲存並生成我的定制計劃 🚀</button>
+        </div>
+
+        <!-- 頁尾常駐版權聲明 -->
+        <div class="footer-copyright">
+            設計人 <strong>mata老師</strong> | Line官方帳號 <span class="text-primary fw-bold">@814wspg</span> | <strong>可倚</strong>
         </div>
 
     </div>
 </div>
 
-<div class="footer-copyright">
-    設計人 <strong>mata老師</strong> | Line官方帳號 <span class="text-primary fw-bold">@814wspg</span> | <strong>可倚</strong>
+<!-- 底部常駐App導覽切換列 -->
+<div class="app-bottom-nav d-none" id="main-app-navigation">
+    <button class="nav-item-box active" id="tab-diet" onclick="switchMainPage('diet')">
+        <span class="nav-icon">🍳</span>飲食打卡
+    </button>
+    <button class="nav-item-box" id="tab-reports" onclick="switchMainPage('reports')">
+        <span class="nav-icon">📊</span>數據報表
+    </button>
+    <button class="nav-item-box" id="tab-profile" onclick="switchMainPage('profile')">
+        <span class="nav-icon">⚙️</span>個人設定
+    </button>
 </div>
 
 <script>
@@ -383,6 +511,8 @@
             document.getElementById('height').value = savedProfile.height;
             document.getElementById('weight').value = savedProfile.weight;
             
+            if(savedProfile.bodyFat) document.getElementById('bodyFat').value = savedProfile.bodyFat;
+            if(savedProfile.visceralFat) document.getElementById('visceralFat').value = savedProfile.visceralFat;
             if(savedProfile.activity) document.getElementById('activity').value = savedProfile.activity;
             if(savedProfile.realDisease) document.getElementById('realDisease').value = savedProfile.realDisease;
             
@@ -390,12 +520,7 @@
             document.getElementById('targetWeight').value = savedProfile.targetWeight;
             document.getElementById('targetDate').value = savedProfile.targetDate;
 
-            const displayTitle = savedProfile.userName ? `${savedProfile.userName} 的 AI 享瘦日記` : '您的 AI 享瘦日記';
-            document.getElementById('main-app-title').innerText = displayTitle;
-            document.getElementById('share-tag-name').innerText = savedProfile.userName ? `${savedProfile.userName}專屬` : '日光國際';
-
-            document.getElementById('profile-section').classList.add('d-none');
-            document.getElementById('dashboard-section').classList.remove('d-none');
+            switchMainPage('diet'); 
         }
 
         checkAndResetDailyCircle();
@@ -403,6 +528,34 @@
         renderHistoryShareCard(); 
         initChart();
     };
+
+    function switchMainPage(pageName) {
+        document.getElementById('page-diet').classList.add('d-none');
+        document.getElementById('page-reports').classList.add('d-none');
+        document.getElementById('page-profile').classList.add('d-none');
+        
+        document.getElementById('tab-diet').classList.remove('active');
+        document.getElementById('tab-reports').classList.remove('active');
+        document.getElementById('tab-profile').classList.remove('active');
+
+        document.getElementById('main-app-navigation').classList.remove('d-none');
+
+        if (pageName === 'diet') {
+            document.getElementById('page-diet').classList.remove('d-none');
+            document.getElementById('tab-diet').classList.add('active');
+        } else if (pageName === 'reports') {
+            document.getElementById('page-reports').classList.remove('d-none');
+            document.getElementById('tab-reports').classList.add('active');
+            setTimeout(() => { if (trendChart) trendChart.resize(); }, 50);
+        } else if (pageName === 'profile') {
+            document.getElementById('page-profile').classList.remove('d-none');
+            document.getElementById('tab-profile').classList.add('active');
+        }
+
+        const nameVal = document.getElementById('userName').value.trim() || 'mata';
+        document.getElementById('main-app-title').innerText = `${nameVal} 的 AI 享瘦日記`;
+        document.getElementById('share-tag-name').innerText = nameVal ? `${nameVal}專屬` : '日光國際';
+    }
 
     function checkAndResetDailyCircle() {
         const lastOpenDate = localStorage.getItem('lastOpenDate');
@@ -442,8 +595,8 @@
         const targetArea = document.getElementById('capture-history-area');
         if (!targetArea) return;
 
-        const downloadBtn = targetArea.querySelector('button');
-        if(downloadBtn) downloadBtn.style.display = 'none';
+        const buttons = targetArea.querySelectorAll('button');
+        buttons.forEach(btn => btn.style.display = 'none');
 
         alert('正在為您打包轉換精美成果長圖，請稍候...🚀');
 
@@ -452,13 +605,13 @@
             scale: 2, 
             backgroundColor: '#ffffff'
         }).then(canvas => {
-            if(downloadBtn) downloadBtn.style.display = 'block';
+            buttons.forEach(btn => btn.style.display = 'block');
 
             const imageType = 'image/png';
             const imageData = canvas.toDataURL(imageType);
             const downloadLink = document.createElement('a');
             
-            const nameInput = document.getElementById('userName').value.trim() || 'Mata團隊';
+            const nameInput = document.getElementById('userName').value.trim() || '日光國際';
             downloadLink.download = `${nameInput}_餐量管理成果報告_${todayStr.replace('/','-')}.png`;
             downloadLink.href = imageData;
             downloadLink.dataset.downloadurl = [imageType, downloadLink.download, downloadLink.href].join(':');
@@ -467,9 +620,53 @@
             downloadLink.click();
             document.body.removeChild(downloadLink);
         }).catch(err => {
-            if(downloadBtn) downloadBtn.style.display = 'block';
-            alert('拍照器啟動失敗，可以直接用手機長按或截圖功能喔！');
+            buttons.forEach(btn => btn.style.display = 'block');
+            alert('拍照器啟動失敗');
         });
+    }
+
+    function exportDataToExcel() {
+        const p = JSON.parse(localStorage.getItem('myProfileData')) || {};
+        const foodRecords = JSON.parse(localStorage.getItem('myFoodRecords')) || [];
+        const bedtimeHistory = JSON.parse(localStorage.getItem('myBedtimeHistory')) || {};
+        const wakeupHistory = JSON.parse(localStorage.getItem('myWakeupHistory')) || {};
+
+        if (foodRecords.length === 0 && Object.keys(bedtimeHistory).length === 0 && Object.keys(wakeupHistory).length === 0) {
+            alert('目前手機中還沒有任何餐量數據可導出喔！');
+            return;
+        }
+
+        let csvContent = "\uFEFF"; 
+        csvContent += "暱稱,日期,前日睡前體重(kg),今日起床體重(kg),體脂率(%),內臟脂肪等級\n";
+
+        let dateSet = new Set();
+        foodRecords.forEach(r => dateSet.add(r.date));
+        Object.keys(bedtimeHistory).forEach(d => dateSet.add(d));
+        Object.keys(wakeupHistory).forEach(d => dateSet.add(d));
+        let allSortedDates = Array.from(dateSet).sort();
+
+        const fatStr = p.bodyFat ? `${p.bodyFat}%` : "-";
+        const vFatStr = p.visceralFat ? `${p.visceralFat}` : "-";
+        const nickName = p.userName || "未填";
+
+        allSortedDates.forEach(date => {
+            const bWeight = bedtimeHistory[date] || "-";
+            const wWeight = wakeupHistory[date] || "-";
+            csvContent += `${nickName},${date},${bWeight},${wWeight},${fatStr},${vFatStr}\n`;
+        });
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        
+        link.setAttribute("href", url);
+        link.setAttribute("download", `${nickName}_日光國際核心健康大數據管理表_${todayStr.replace('/','-')}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        alert('📊 日光國際核心大數據 Excel 表格已成功打包下載！');
     }
 
     function switchCardRange(range) {
@@ -481,15 +678,9 @@
         renderHistoryShareCard();
     }
 
-    function goToHome() {
-        document.getElementById('main-app-title').innerText = '我的 AI 享瘦日記';
-        document.getElementById('dashboard-section').classList.add('d-none');
-        document.getElementById('profile-section').classList.remove('d-none');
-    }
-
     function switchChartRange(range) {
         currentRange = range;
-        const buttons = document.querySelectorAll('.nav-tabs-custom .nav-link');
+        const buttons = document.querySelectorAll('#timeTab .nav-link');
         buttons.forEach(btn => btn.classList.remove('active'));
         event.target.classList.add('active');
         initChart();
@@ -501,6 +692,8 @@
         const gender = document.getElementById('gender').value;
         const height = document.getElementById('height').value;
         const weight = document.getElementById('weight').value;
+        const bodyFat = document.getElementById('bodyFat').value;
+        const visceralFat = document.getElementById('visceralFat').value;
         const activity = document.getElementById('activity').value;
         const realDisease = document.getElementById('realDisease').value;
         const allergy = document.getElementById('allergy').value;
@@ -512,21 +705,26 @@
             return;
         }
 
+        const oldProfile = JSON.parse(localStorage.getItem('myProfileData'));
+        if (oldProfile && oldProfile.userName !== userName) {
+            const confirmClear = confirm(`👋 偵測到使用者已從「${oldProfile.userName}」切換為「${userName}」！\n\n是否一併清空前一位使用者的飲食與體重紀錄，為新使用者建立乾淨的新看板？`);
+            if (confirmClear) {
+                localStorage.removeItem('myFoodRecords');
+                localStorage.removeItem('myBedtimeHistory');
+                localStorage.removeItem('myWakeupHistory');
+            }
+        }
+
         const profileData = {
-            userName, birthYear, gender, height, weight, activity, realDisease, allergy, targetWeight, targetDate
+            userName, birthYear, gender, height, weight, bodyFat, visceralFat, activity, realDisease, allergy, targetWeight, targetDate
         };
         localStorage.setItem('myProfileData', JSON.stringify(profileData));
 
-        const displayTitle = userName ? `${userName} 的 AI 享瘦日記` : '您的 AI 享瘦日記';
-        document.getElementById('main-app-title').innerText = displayTitle;
-        document.getElementById('share-tag-name').innerText = userName ? `${userName}專屬` : '日光國際';
-
-        document.getElementById('profile-section').classList.add('d-none');
-        document.getElementById('dashboard-section').classList.remove('d-none');
+        switchMainPage('diet');
         
         renderFoodList();
         renderHistoryShareCard();
-        setTimeout(() => { if (trendChart) trendChart.resize(); }, 100);
+        initChart();
     }
 
     function addDoubleWeightRecord() {
@@ -573,7 +771,6 @@
             
             reader.onload = function(e) {
                 const photoResult = e.target.result;
-                
                 if (photoResult.length > 3500000) { 
                     const img = new Image();
                     img.onload = function() {
@@ -589,10 +786,7 @@
                     saveToLocalStorage(name, kcal, photoResult);
                 }
             };
-            
-            reader.onerror = function() {
-                saveToLocalStorage(name, kcal, '');
-            };
+            reader.onerror = function() { saveToLocalStorage(name, kcal, ''); };
             reader.readAsDataURL(file);
         } else {
             saveToLocalStorage(name, kcal, '');
@@ -602,7 +796,7 @@
     function saveToLocalStorage(name, kcal, photoUrl) {
         let currentRecords = JSON.parse(localStorage.getItem('myFoodRecords')) || [];
         const newRecord = {
-            id: Date.now(),
+            id: Date.now() + Math.floor(Math.random() * 1000), 
             date: todayStr, 
             name: name,
             kcal: parseInt(kcal),
@@ -622,74 +816,85 @@
         document.getElementById('foodPhoto').value = '';
     }
 
-    // 🌟 終極重寫：餐量管理紀錄看板——完美同步每一餐流水帳流 🌟
+    function deleteSingleFoodRecord(recordId) {
+        if (!confirm('確定要刪除這一餐的紀錄嗎？')) return;
+
+        let currentRecords = JSON.parse(localStorage.getItem('myFoodRecords')) || [];
+        currentRecords = currentRecords.filter(item => item.id !== recordId);
+        localStorage.setItem('myFoodRecords', JSON.stringify(currentRecords));
+
+        renderFoodList();
+        renderHistoryShareCard();
+        initChart();
+    }
+
+    function clearTodayRecords() {
+        if (!confirm('⚠️ 確定要清除「今天」的所有飲食與體重紀錄嗎？此動作無法復原喔！')) return;
+        
+        let currentRecords = JSON.parse(localStorage.getItem('myFoodRecords')) || [];
+        currentRecords = currentRecords.filter(item => item.date !== todayStr);
+        localStorage.setItem('myFoodRecords', JSON.stringify(currentRecords));
+
+        let bedtimeHistory = JSON.parse(localStorage.getItem('myBedtimeHistory')) || {};
+        let wakeupHistory = JSON.parse(localStorage.getItem('myWakeupHistory')) || {};
+        delete bedtimeHistory[todayStr];
+        delete wakeupHistory[todayStr];
+        localStorage.setItem('myBedtimeHistory', JSON.stringify(bedtimeHistory));
+        localStorage.setItem('myWakeupHistory', JSON.stringify(wakeupHistory));
+
+        renderFoodList();
+        renderHistoryShareCard();
+        initChart();
+        alert('今日紀錄已清空！');
+    }
+
     function renderHistoryShareCard() {
         const container = document.getElementById('history-days-container');
         if (!container) return;
 
         const foodRecords = JSON.parse(localStorage.getItem('myFoodRecords')) || [];
-        const bedtimeHistory = JSON.parse(localStorage.getItem('myBedtimeHistory')) || {};
-        const wakeupHistory = JSON.parse(localStorage.getItem('myWakeupHistory')) || {};
-
-        // 1. 先把所有有紀錄的日期排好
         let dateSet = new Set();
         dateSet.add(todayStr);
         foodRecords.forEach(r => dateSet.add(r.date));
-        Object.keys(bedtimeHistory).forEach(d => dateSet.add(d));
-        Object.keys(wakeupHistory).forEach(d => dateSet.add(d));
         let allSortedDates = Array.from(dateSet).sort(); 
 
-        // 2. 根據篩選紐裁剪天數
         let displayDates = [];
-        if (currentCardRange === 'day') {
-            displayDates = [todayStr]; 
-        } else if (currentCardRange === 'week') {
-            displayDates = allSortedDates.slice(-7); 
-        } else {
-            displayDates = allSortedDates.slice(-30); 
-        }
+        if (currentCardRange === 'day') displayDates = [todayStr]; 
+        else if (currentCardRange === 'week') displayDates = allSortedDates.slice(-7); 
+        else displayDates = allSortedDates.slice(-30); 
 
         let htmlContent = '';
 
-        // 3. 雙層迴圈大改造：天 ➔ 每餐流水帳
         displayDates.forEach(date => {
             const dayFoods = foodRecords.filter(r => r.date === date);
-            const bWeight = bedtimeHistory[date] ? `${bedtimeHistory[date]}k` : '-';
-            const wWeight = wakeupHistory[date] ? `${wakeupHistory[date]}k` : '-';
-            const weightDisplay = `🌙${bWeight} / ☀️${wWeight}`;
 
-            // 💡 如果這天「有吃東西」，就把每一餐通通單獨拉出來印，完美更新！
             if (dayFoods.length > 0) {
-                // 照時間順序排好（最早吃的放下面，最新吃的放上面）
                 const sortedDayFoods = [...dayFoods].reverse();
-                
                 sortedDayFoods.forEach(food => {
-                    let previewImgHtml = `<div style="width:50px; height:50px; background:#e2e8f0; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:10px;">無</div>`;
-                    if (food.photo) {
-                        previewImgHtml = `<img src="${food.photo}" style="width:50px; height:50px; object-fit:cover; border-radius:8px;">`;
-                    }
+                    let previewImgHtml = `<div style="width:60px; height:60px; background:#e2e8f0; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:11px;">無照片</div>`;
+                    if (food.photo) previewImgHtml = `<img src="${food.photo}" style="width:60px; height:60px; object-fit:cover; border-radius:10px;">`;
 
                     htmlContent += `
                         <div class="d-flex align-items-center justify-content-between border-bottom py-2">
                             ${previewImgHtml}
                             <div class="flex-grow-1 ms-3">
-                                <div class="fw-bold text-dark" style="font-size:12px;">📅 ${date} [${food.time}] | ⚖️ ${weightDisplay}</div>
-                                <div class="text-success fw-bold" style="font-size: 11px;">😋 ${food.name}</div>
+                                <div class="fw-bold text-secondary" style="font-size:11px;">📅 日期: ${date} ⏰ 時間: ${food.time}</div>
+                                <div class="text-dark fw-bold" style="font-size: 0.92rem; margin-top:2px;">😋 餐點: ${food.name}</div>
                             </div>
-                            <div class="text-end">
-                                <span class="badge bg-light text-primary border border-primary font-monospace small" style="font-size: 11px;">+${food.kcal} kcal</span>
+                            <div class="text-end d-flex align-items-center g-2">
+                                <span class="badge bg-success font-monospace" style="font-size: 0.82rem; padding: 5px 8px;">${food.kcal} kcal</span>
+                                <button class="delete-btn-single ms-1" onclick="deleteSingleFoodRecord(${food.id})">❌</button>
                             </div>
                         </div>
                     `;
                 });
             } else {
-                // 💡 如果這天沒記食物，只記了體重，就印出空白行，防畫面破損
                 htmlContent += `
                     <div class="d-flex align-items-center justify-content-between border-bottom py-2">
-                        <div style="width:50px; height:50px; background:#e2e8f0; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:10px;">空</div>
+                        <div style="width:60px; height:60px; background:#e2e8f0; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:11px;">空</div>
                         <div class="flex-grow-1 ms-3">
-                            <div class="fw-bold text-muted" style="font-size:12px;">📅 ${date} | ⚖️ ${weightDisplay}</div>
-                            <div class="text-muted small" style="font-size: 11px;">當日尚無進食紀錄</div>
+                            <div class="fw-bold text-muted" style="font-size:11px;">📅 ${date}</div>
+                            <div class="text-muted small" style="font-size: 11px;">當日尚無餐量進食紀錄</div>
                         </div>
                         <div class="text-end">
                             <span class="badge bg-light text-secondary border small" style="font-size: 11px;">0 kcal</span>
@@ -731,8 +936,9 @@
                         <div class="fw-bold text-dark">${item.name}</div>
                         <div class="text-muted small">時間：${item.time}</div>
                     </div>
-                    <div class="text-end">
-                        <span class="badge bg-primary fs-6">${item.kcal} kcal</span>
+                    <div class="text-end d-flex align-items-center g-2">
+                        <span class="badge bg-primary fs-6 me-2">${item.kcal} kcal</span>
+                        <button class="btn btn-sm btn-outline-danger" style="padding:2px 6px; font-size:12px; border-radius:6px;" onclick="deleteSingleFoodRecord(${item.id})">❌</button>
                     </div>
                 </div>
             `;
@@ -787,110 +993,6 @@
             statusElement.style.color = '#dc2626';
             circleElement.style.background = `conic-gradient(#dc2626 360deg, #e2e8f0 0deg)`;
         }
-    }
-
-    function initChart() {
-        const canvas = document.getElementById('trendChart');
-        if (!canvas) return;
-        
-        const ctx = canvas.getContext('2d');
-        const foodRecords = JSON.parse(localStorage.getItem('myFoodRecords')) || [];
-        const bedtimeHistory = JSON.parse(localStorage.getItem('myBedtimeHistory')) || {};
-        const wakeupHistory = JSON.parse(localStorage.getItem('myWakeupHistory')) || {};
-        
-        let dateSet = new Set();
-        dateSet.add(todayStr); 
-        foodRecords.forEach(r => dateSet.add(r.date));
-        Object.keys(bedtimeHistory).forEach(d => dateSet.add(d));
-        Object.keys(wakeupHistory).forEach(d => dateSet.add(d));
-        let allSortedDates = Array.from(dateSet).sort(); 
-
-        let displayDates = [];
-        if (currentRange === 'day') displayDates = allSortedDates.slice(-5);
-        else if (currentRange === 'week') displayDates = allSortedDates.slice(-14);
-        else displayDates = allSortedDates.slice(-30);
-
-        let calorieData = displayDates.map(date => {
-            let dayTotal = 0;
-            foodRecords.forEach(r => { if(r.date === date) dayTotal += r.kcal; });
-            return dayTotal;
-        });
-
-        let bedtimeData = displayDates.map(date => bedtimeHistory[date] || null);
-        let wakeupData = displayDates.map(date => wakeupHistory[date] || null);
-
-        if (trendChart) trendChart.destroy();
-
-        trendChart = new Chart(ctx, {
-            type: 'line', 
-            data: {
-                labels: displayDates, 
-                datasets: [
-                    {
-                        label: '攝取熱量 (kcal)',
-                        data: calorieData,
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        yAxisID: 'y',
-                        tension: 0.3
-                    },
-                    {
-                        label: '睡前體重 (kg)',
-                        data: bedtimeData,
-                        borderColor: '#ea580c',
-                        backgroundColor: 'transparent',
-                        yAxisID: 'y1',
-                        tension: 0.3,
-                        spanGaps: true
-                    },
-                    {
-                        label: '起床體重 (kg)',
-                        data: wakeupData,
-                        borderColor: '#10b981',
-                        backgroundColor: 'transparent',
-                        yAxisID: 'y1',
-                        tension: 0.3,
-                        spanGaps: true
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: { type: 'linear', display: true, position: 'left', title: { display: true, text: '熱量' } },
-                    y1: { type: 'linear', display: true, position: 'right', title: { display: true, text: '體重 (kg)' }, grid: { drawOnChartArea: false } }
-                }
-            }
-        });
-    }
-
-    function askGeminiHelper() {
-        const p = JSON.parse(localStorage.getItem('myProfileData')) || {};
-        const age = p.birthYear ? (new Date().getFullYear() - p.birthYear) : 30;
-        const promptText = `你現在是我的專業AI減重營養師。我的基本身體數據如下：
-- 暱稱: ${p.userName || 'mata'}
-- 性別認同: ${p.gender || '女性'}
-- 年齡: ${age} 歲
-- 身高: ${p.height || 165} cm
-- 目前體重: ${p.weight || 65} kg
-- 平日運動習慣: ${p.activity || '久坐少動'}
-- 特殊狀況: ${p.realDisease || '無'}
-- 過敏食物: ${p.allergy || '無'}
-- 目標減重: ${p.targetWeight || 5} kg
-
-我剛剛上傳了一張我這餐準備要吃的食物照片，請幫我：
-1. 辨識照片中有哪些食材與菜色？
-2. 估算這整餐的大約熱量是多少大卡（kcal）？
-3. 給我一個精確的「食物名稱」與「熱量數字」，方便我直接記在我的日記網頁中。`;
-
-        navigator.clipboard.writeText(promptText).then(() => {
-            alert('🤖 AI 營養師提示詞已複製成功！現在為您開啟 Gemini，請直接貼上並上傳照片吧！');
-            window.open('https://gemini.google.com/', '_blank');
-        }).catch(() => {
-            alert('提示詞複製失敗，您可以直接前往 Gemini 上傳照片詢問熱量喔！');
-            window.open('https://gemini.google.com/', '_blank');
-        });
     }
 </script>
 
