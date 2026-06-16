@@ -310,13 +310,13 @@
             </div>
             <ul class="nav nav-tabs nav-tabs-custom mb-4" id="timeTab" role="tablist">
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link active" onclick="switchChartRange('day')">日紀錄</button>
+                    <button class="nav-link active" id="btn-chart-day" onclick="switchChartRange('day')">日紀錄</button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" onclick="switchChartRange('week')">週趨勢</button>
+                    <button class="nav-link" id="btn-chart-week" onclick="switchChartRange('week')">週趨勢</button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" onclick="switchChartRange('month')">月分析</button>
+                    <button class="nav-link" id="btn-chart-month" onclick="switchChartRange('month')">月分析</button>
                 </li>
             </ul>
 
@@ -368,7 +368,7 @@
                     🎁 [好康報報] 日光國際專屬學員福利
                 </h6>
                 <div class="text-dark mb-3" style="font-size: 0.85rem; line-height: 1.5; text-align: justify;">
-                    恭喜您成功啟動餐量管理！現在點擊下方按鈕加入 日光國際 LINE 官方帳號，並回傳您的日記暱稱，即可免費預約乙次【INBODY1對1 內臟脂肪科學代謝率深度解構評估】並加碼領取【日光AI 健康大師助理！】名額有限，立即加入！
+                    恭喜您成功啟動餐量管理！現在點擊下方按鈕加入 日光國際 LINE 官方帳號，並回傳您的日記暱稱，即可免費預約乙次【INBODY1對1 內臟脂肪科學代謝率深度解構評充】並加碼領取【日光AI 健康大師助理！】名額有限，立即加入！
                 </div>
                 <a href="https://lin.ee/vmMZ5kf" target="_blank" class="btn btn-sm w-100 fw-bold text-white text-center" style="background-color: #ea580c; border: none; border-radius: 10px; padding: 8px; font-size: 0.85rem; box-shadow: 0 4px 10px rgba(234, 88, 12, 0.2);">
                     🔥 點擊一鍵加入官方 LINE 領取好康 ➔
@@ -692,8 +692,19 @@
         renderHistoryShareCard();
     }
 
+    // 🌟 核心修正：編寫真正能驅動圖表切換的 switchChartRange 函式，並加上 UI 樣式高亮控制
     function switchChartRange(range) {
         currentRange = range;
+        
+        // 1. 先把三個圖表按鈕的亮線與選中外衣脫掉
+        document.getElementById('btn-chart-day').classList.remove('active');
+        document.getElementById('btn-chart-week').classList.remove('active');
+        document.getElementById('btn-chart-month').classList.remove('active');
+        
+        // 2. 幫當前點擊的按鈕套上藍色亮線衣服
+        document.getElementById(`btn-chart-${range}`).classList.add('active');
+        
+        // 3. 重新呼叫圖表引擎，依據新時間範圍抓取對應的天數數據
         initChart();
     }
 
@@ -1100,7 +1111,6 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    // 🌟 修正：開啟並優化 Tooltips 顯示，滑上去或點擊時，框框會完美顯現詳細數字
                     tooltip: {
                         enabled: true,
                         mode: 'index',
@@ -1143,7 +1153,6 @@
         });
     }
 
-    // 🌟 修正：補上原本遺漏的引流點擊輔助函式，確保一鍵複製功能不失效
     function askGeminiHelper() {
         const text = "請幫我計算以下食物的熱量大卡：";
         navigator.clipboard.writeText(text).then(() => {
