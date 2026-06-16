@@ -557,6 +557,55 @@
         alert('✨ 餐量管理數據已安全清空！網頁將自動重置載入。');
         window.location.reload();
     }
+       // 請直接把下面這整塊複製，貼在 function switchMainPage 之前
+    function initChart() {
+    const canvas = document.getElementById('trendChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const foods = JSON.parse(localStorage.getItem('myFoodRecords')) || [];
+    const bed = JSON.parse(localStorage.getItem('myBedtimeHistory')) || {};
+    const wake = JSON.parse(localStorage.getItem('myWakeupHistory')) || {};
+    let dates = Array.from(new Set([...Object.keys(bed), ...Object.keys(wake), todayStr])).sort();
+    let kData = [], bData = [], wData = [], allW = [];
+    dates.forEach(d => {
+        kData.push(foods.filter(r => r.date === d).reduce((s, i) => s + parseInt(i.kcal || 0), 0));
+        bData.push(bed[d] ? parseFloat(bed[d]) : null);
+        wData.push(wake[d] ? parseFloat(wake[d]) : null);
+        if(bed[d]) allW.push(parseFloat(bed[d]));
+        if(wake[d]) allW.push(parseFloat(wake[d]));
+    });
+    let minW = allW.length ? Math.floor(Math.min(...allW) - 1.5) : 40;
+    let maxW = allW.length ? Math.ceil(Math.max(...allW) + 1.5) : 100;
+    if (trendChart) trendChart.destroy();
+    trendChart = new Chart(ctx, {
+        type: 'line',
+        data: { labels: dates, datasets: [
+            { label: '熱量', data: kData, borderColor: '#3b82f6', yAxisID: 'yKcal', datalabels: { display: true, color: '#3b82f6', anchor: 'end', align: 'top',     formatter: v => v > 0 ? v : '' } },
+            { label: '睡前', data: bData, borderColor: '#9333ea', yAxisID: 'yWeight', borderDash: [5, 5], datalabels: { display: true, color: '#9333ea', anchor: 'end', align: 'bottom', formatter: v => v ? v : '' } },
+            { label: '起床', data: wData, borderColor: '#10b981', yAxisID: 'yWeight', datalabels: { display: true, color: '#10b981', anchor: 'end', align: 'top', formatter: v => v ? v : '' } }
+        ]},
+        options:options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                datalabels: {
+                    display: true, // 強制顯示
+                    color: '#333',
+                    font: { size: 10, weight: 'bold' },
+                    anchor: 'end',
+                    align: 'top',
+                    offset: 4,     // 稍微拉開距離
+                    formatter: function(value, context) {
+                        return value ? value : ''; // 只要有值就顯示
+                    }
+                }
+            },
+            scales: { 
+                yKcal: { position: 'left' }, 
+                yWeight: { position: 'right', min: minW, max: maxW } 
+            }
+        }
+
 
     function switchMainPage(pageName) {
         document.getElementById('page-diet').classList.add('d-none');
@@ -1046,34 +1095,42 @@
 
         if (trendChart) trendChart.destroy();
         
-        trendChart = new Chart(ctx, {
+trendChart = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: dates,
                 datasets: [
                     { 
                         label: '熱量', data: kData, borderColor: '#3b82f6', yAxisID: 'yKcal', 
-                        datalabels: { color: '#3b82f6', anchor: 'end', align: 'top', formatter: v => v > 0 ? v : '' } 
+                        datalabels: { display: true, color: '#3b82f6', anchor: 'end', align: 'top', formatter: v => v > 0 ? v : '' } 
                     },
                     { 
                         label: '睡前', data: bData, borderColor: '#9333ea', yAxisID: 'yWeight', borderDash: [5, 5], 
-                        datalabels: { color: '#9333ea', anchor: 'end', align: 'bottom', formatter: v => v ? v : '' } 
+                        datalabels: { display: true, color: '#9333ea', anchor: 'end', align: 'bottom', formatter: v => v ? v : '' } 
                     },
                     { 
                         label: '起床', data: wData, borderColor: '#10b981', yAxisID: 'yWeight', 
-                        datalabels: { color: '#10b981', anchor: 'end', align: 'top', formatter: v => v ? v : '' } 
+                        datalabels: { display: true, color: '#10b981', anchor: 'end', align: 'top', formatter: v => v ? v : '' } 
                     }
                 ]
             },
             options: {
-                plugins: { datalabels: { font: { size: 10, weight: 'bold' } } },
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    datalabels: {
+                        display: true,
+                        font: { size: 10, weight: 'bold' }
+                    }
+                },
                 scales: { 
                     yKcal: { position: 'left' }, 
                     yWeight: { position: 'right', min: minW, max: maxW } 
                 }
             }
         });
-    }
+} //
+
 </script>
 
 </body>
