@@ -4,11 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>我的 AI 享瘦日記 - 餐量管理個人紀錄版</title>
-    <!-- Bootstrap 美化樣式庫 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Chart.js 圖表大師 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- html2canvas 卡片轉相片黑科技 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body {
@@ -229,7 +226,6 @@
 <div class="container" style="padding-bottom: 30px;">
     <div class="app-container">
         
-        <!-- 權威大頭貼與標題區 -->
         <div class="text-center mb-4">
             <h2 class="fw-bold m-0" style="color: #1e3a8a; font-size: 1.65rem;" id="main-app-title">我的 AI 享瘦日記</h2>
             <div class="mt-1 fw-bold text-success" style="font-size: 0.88rem; letter-spacing: 1px;">
@@ -237,7 +233,6 @@
             </div>
         </div>
         
-        <!-- ================= 頁面 A：飲食打卡 ================= -->
         <div id="page-diet" class="d-none">
             <div class="calorie-dashboard">
                 <div class="d-flex justify-content-between mb-2 text-muted small">
@@ -308,7 +303,6 @@
         </div>
 
 
-        <!-- ================= 🌟 頁面 B：數據報表 ================= -->
         <div id="page-reports" class="d-none">
             <div class="section-title">大健康趨勢分析圖</div>
             <div class="chart-container">
@@ -326,7 +320,6 @@
                 </li>
             </ul>
 
-            <!-- 卡片 A：餐量管理個人紀錄版（見證長圖卡） -->
             <div class="history-card-box" id="capture-history-area">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <h6 class="fw-bold text-success m-0" style="font-size: 1.05rem; letter-spacing: 0.5px;">
@@ -354,7 +347,6 @@
                 </button>
             </div>
 
-            <!-- 卡片 B：日光國際大數據管理中心 -->
             <div class="data-management-box">
                 <h6 class="fw-bold text-primary mb-2" style="font-size: 1.05rem;">
                     📊 日光國際大數據管理中心
@@ -367,12 +359,10 @@
                 </button>
             </div>
 
-            <!-- 🌟 修正 3：在好康報報卡片上方增加一行專業保護小字 🌟 -->
             <div class="text-muted mb-2 text-center" style="font-size: 0.72rem; padding: 0 10px;">
                 ⚠️ 本數據報告來源為個人自行填寫之數據整理報告，非醫療報告，請自行保存。
             </div>
 
-            <!-- [好康報報] 專屬活動公告動態引流卡 -->
             <div class="good-news-box">
                 <h6 class="fw-bold mb-2" style="color: #ea580c; font-size: 1.05rem;">
                     🎁 [好康報報] 日光國際專屬學員福利
@@ -387,7 +377,6 @@
         </div>
 
 
-        <!-- ================= 頁面 C：個人資訊 ================= -->
         <div id="page-profile" class="d-block">
             <div class="privacy-alert p-3 mb-4 text-center">
                 🔒 <strong>安心聲明</strong>：本系統所記錄的所有數據與照片，<strong>完全儲存在您自己的手機本地瀏覽器中</strong>，絕不上傳 any 外部伺服器，不會有任何隱私外洩的風險，請放心體驗！
@@ -473,7 +462,6 @@
 
             <button class="primary-btn mb-4" onclick="saveProfile()">儲存並生成我的定制計劃 🚀</button>
 
-            <!-- 清除資訊防誤解大鈕 -->
             <div class="text-center pt-3 border-top">
                 <button class="btn btn-sm btn-outline-danger fw-bold px-3 py-2" style="border-radius: 10px; font-size: 0.85rem;" onclick="factoryResetAllData()">
                     ⚠️ 清除本機餐量管理資訊並重新設定
@@ -481,7 +469,6 @@
             </div>
         </div>
 
-        <!-- 底部常駐版權宣告全新更名引流線 -->
         <div class="footer-copyright">
             設計人<strong>mata老師</strong> | LINE官方帳號搜尋: <span class="text-primary fw-bold">Ai168百業數位平台</span>
         </div>
@@ -489,7 +476,6 @@
     </div>
 </div>
 
-<!-- 底部常駐App導覽切換列 -->
 <div class="app-bottom-nav d-none" id="main-app-navigation">
     <button class="nav-item-box" id="tab-diet" onclick="switchMainPage('diet')">
         <span class="nav-icon">🍳</span>飲食打卡
@@ -530,11 +516,9 @@
             document.getElementById('targetWeight').value = savedProfile.targetWeight;
             document.getElementById('targetDate').value = savedProfile.targetDate;
 
-            // 🌟 修正 2：如果以前有儲存過，重整開機時自動降落到學員最後一次停留的分頁，絕不跳頁！
             const lastPage = localStorage.getItem('lastActiveTab') || 'profile';
             switchMainPage(lastPage);
         } else {
-            // 完全新開機的使用者直接降落個人設定
             switchMainPage('profile');
             document.getElementById('main-app-navigation').classList.add('d-none');
         }
@@ -580,7 +564,6 @@
             document.getElementById('tab-profile').classList.add('active');
         }
 
-        // 🌟 修正 2：記住最後停留的分頁標籤，防下拉刷新跳頁
         localStorage.setItem('lastActiveTab', pageName);
 
         const nameVal = document.getElementById('userName').value.trim() || 'mata';
@@ -707,6 +690,11 @@
         document.getElementById('btn-card-month').classList.remove('active');
         document.getElementById(`btn-card-${range}`).classList.add('active');
         renderHistoryShareCard();
+    }
+
+    function switchChartRange(range) {
+        currentRange = range;
+        initChart();
     }
 
     function saveProfile() {
@@ -1018,7 +1006,6 @@
         }
     }
 
-    // 🌟 終極重寫：解放體重軸高度界限，折線與數字完美歸位大腦 🌟
     function initChart() {
         const canvas = document.getElementById('trendChart');
         if (!canvas) return;
@@ -1046,7 +1033,7 @@
         let kcalData = [];
         let bedtimeData = [];
         let wakeupData = [];
-        let allWeightsInputted = []; // 搜集所有體重以計算黃金適應區間
+        let allWeightsInputted = []; 
 
         sortedDates.forEach(d => {
             const dayFoods = foodRecords.filter(r => r.date === d);
@@ -1063,13 +1050,11 @@
             if(wW) allWeightsInputted.push(wW);
         });
 
-        // 💡 智慧精算：動態計算折線圖右側體重軸的完美最大值與最小值
         let finalMinWeight = 40;
         let finalMaxWeight = 100;
         if (allWeightsInputted.length > 0) {
             const minInArr = Math.min(...allWeightsInputted);
             const maxInArr = Math.max(...allWeightsInputted);
-            // 上下各留 1.5 公斤的留白舒適圈，保證折線不破圖、不飛到天花板
             finalMinWeight = Math.floor(minInArr - 1.5);
             finalMaxWeight = Math.ceil(maxInArr + 1.5);
         }
@@ -1114,6 +1099,31 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                plugins: {
+                    // 🌟 修正：開啟並優化 Tooltips 顯示，滑上去或點擊時，框框會完美顯現詳細數字
+                    tooltip: {
+                        enabled: true,
+                        mode: 'index',
+                        intersect: false,
+                        padding: 10,
+                        backgroundColor: 'rgba(30, 58, 138, 0.95)',
+                        titleFont: { size: 13, weight: 'bold' },
+                        bodyFont: { size: 12 },
+                        borderRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += context.parsed.y;
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
                 scales: {
                     yKcal: {
                         type: 'linear',
@@ -1125,12 +1135,22 @@
                         type: 'linear',
                         position: 'right',
                         title: { display: true, text: '體重 (kg)', font: { weight: 'bold' } },
-                        // 🌟 解放封印：直接注入黃金適應區間，數字與折線完美落入框內！ 🌟
                         min: finalMinWeight,
                         max: finalMaxWeight
                     }
                 }
             }
+        });
+    }
+
+    // 🌟 修正：補上原本遺漏的引流點擊輔助函式，確保一鍵複製功能不失效
+    function askGeminiHelper() {
+        const text = "請幫我計算以下食物的熱量大卡：";
+        navigator.clipboard.writeText(text).then(() => {
+            alert("🤖 提示詞已複製成功！即將為您打開新視窗，請貼上提問詞並上傳您的食物照片。");
+            window.open("https://gemini.google.com/", "_blank");
+        }).catch(() => {
+            alert("複製失敗，請手動輸入提問詞喔！");
         });
     }
 </script>
