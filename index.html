@@ -12,7 +12,7 @@
             background-color: #f4f7fe;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: #333;
-            padding-bottom: 70px; /* 留底部的空間給版權聲明 */
+            padding-bottom: 70px;
         }
         .app-container {
             max-width: 500px;
@@ -126,7 +126,6 @@
             border: 1px solid #dee2e6;
             border-bottom: 2px solid #f8fafc;
         }
-        /* 底部固定的漂亮版權旗幟 */
         .footer-copyright {
             text-align: center;
             padding: 12px 10px;
@@ -150,7 +149,6 @@
             border-radius: 14px;
             font-size: 0.9rem;
         }
-        /* 餐量管理個人紀錄版卡片外觀 */
         .history-card-box {
             background-color: #ffffff;
             border: 1px solid #a7f3d0;
@@ -175,10 +173,10 @@
         
         <div id="profile-section">
             <div class="privacy-alert p-3 mb-4 text-center">
-                🔒 <strong>安心聲明</strong>：本系統所記錄的所有身體數據與照片，<strong>完全儲存在您自己的手機本地瀏覽器中</strong>，絕不上傳任何外部伺服器，不會有任何隱私外洩的風險，請放心體驗！
+                🔒 <strong>安心聲明</strong>：本系統所記錄的所有數據與照片，<strong>完全儲存在您自己的手機本地瀏覽器中</strong>，絕不上傳任何外部伺服器，不會有任何隱私外洩的風險，請放心體驗！
             </div>
 
-            <div class="section-title">第一步：輸入身體基本數據</div>
+            <div class="section-title">第一步：輸入個人基本數據</div>
             
             <div class="mb-3">
                 <label class="form-label" style="font-weight: 600; color: #1e3a8a;">您的暱稱 / 稱呼</label>
@@ -287,14 +285,14 @@
 
             <div class="card p-3 mb-4" style="background-color: #f3e8ff; border: 1px solid #c084fc;">
                 <h6 class="fw-bold" style="color: #6b21a8;">💡 拍照了不知道熱量？</h6>
-                <p class="small text-muted mb-2">點擊下方按鈕自動複製提問詞，貼上提問詞+上傳照片,用Ai幫你查熱量！</p>
+                <p class="small text-muted mb-2">點擊下方按鈕自動複製提問詞，前往Ai軟體 貼上並上傳照片,用Ai查熱量！</p>
                 <button class="ai-btn" onclick="askGeminiHelper()">1. 複製提問詞並前往 GPT或Gemini 🤖</button>
             </div>
 
             <div class="card p-3 mb-4">
                 <h6 class="fw-bold mb-3 text-secondary">2. 把 AI 算好的數字記在這裡：</h6>
                 <div class="mb-2">
-                    <input type="text" id="foodName" class="form-control form-control-sm" placeholder="食物名稱 (例如：希臘雞肉沙律)">
+                    <input type="text" id="foodName" class="form-control form-control-sm" placeholder="食物名稱 (例如：自調咖啡牛奶)">
                 </div>
                 <div class="row g-2 mb-2">
                     <div class="col">
@@ -346,7 +344,7 @@
                 <div id="history-days-container" class="p-1"></div>
 
                 <button class="btn btn-success btn-sm w-100 fw-bold mt-3" style="border-radius: 10px; padding: 8px;" onclick="downloadCardAsImage()">
-                    📸 一鍵下載圖片檔 (按確定儲存)
+                    📸 一鍵下載本圖表成果檔 (可直接分享)
                 </button>
             </div>
 
@@ -372,7 +370,6 @@
     let currentRange = 'day';     
     let currentCardRange = 'day'; 
 
-    // 網頁開啟初始化
     window.onload = function() {
         const tDate = new Date();
         tDate.setMonth(tDate.getMonth() + 3);
@@ -441,32 +438,26 @@
         return Math.floor(bmr * factor);
     }
 
-    // 🌟 全新裝配黑科技：自動將卡片轉換為圖檔下載 🌟
     function downloadCardAsImage() {
         const targetArea = document.getElementById('capture-history-area');
         if (!targetArea) return;
 
-        // 臨時把下載按鈕藏起來，避免被拍進相片裡
         const downloadBtn = targetArea.querySelector('button');
         if(downloadBtn) downloadBtn.style.display = 'none';
 
         alert('正在為您打包轉換精美成果長圖，請稍候...🚀');
 
-        // 調用 html2canvas 拍照大師
         html2canvas(targetArea, {
             useCORS: true, 
-            scale: 2, // 雙倍超高解析度，保證傳 LINE 字跡依然銳利不模糊
+            scale: 2, 
             backgroundColor: '#ffffff'
         }).then(canvas => {
-            // 把按鈕叫回來
             if(downloadBtn) downloadBtn.style.display = 'block';
 
-            // 將畫布轉為相片下載超連結
             const imageType = 'image/png';
             const imageData = canvas.toDataURL(imageType);
             const downloadLink = document.createElement('a');
             
-            // 檔名自動套用暱稱與時間（專業規格）
             const nameInput = document.getElementById('userName').value.trim() || 'Mata團隊';
             downloadLink.download = `${nameInput}_餐量管理成果報告_${todayStr.replace('/','-')}.png`;
             downloadLink.href = imageData;
@@ -566,23 +557,51 @@
         renderHistoryShareCard(); 
     }
 
+    // 🌟 核心高相容相片解鎖流 🌟
     function addFoodRecord() {
         const name = document.getElementById('foodName').value;
         const kcal = document.getElementById('foodKcal').value;
         const photoInput = document.getElementById('foodPhoto');
         
         if (!name || !kcal) {
-            alert('請填寫完整食物與熱量！');
+            alert('請填寫完整食物名稱與熱量大卡喔！');
             return;
         }
 
+        // 如果有上傳照片，使用網頁底層 FileReader 繞過系統限制直接感應
         if (photoInput.files && photoInput.files[0]) {
+            const file = photoInput.files[0];
             const reader = new FileReader();
+            
             reader.onload = function(e) {
-                saveToLocalStorage(name, kcal, e.target.result);
-            }
-            reader.readAsDataURL(photoInput.files[0]);
+                const photoResult = e.target.result;
+                
+                // 智慧防當：如果這張照片真的巨大無比（大於3.5MB），自動幫忙無感優化，防瀏覽器瞬間閃退
+                if (photoResult.length > 3500000) { 
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        canvas.width = 320;
+                        canvas.height = (img.height / img.width) * 320;
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        saveToLocalStorage(name, kcal, canvas.toDataURL('image/jpeg', 0.6));
+                    };
+                    img.src = photoResult;
+                } else {
+                    // 標準照片大小，直接秒殺寫入！
+                    saveToLocalStorage(name, kcal, photoResult);
+                }
+            };
+            
+            reader.onerror = function() {
+                alert('手機系統安全阻擋讀取，自動轉換為無圖模式，數據依然會安全保存！');
+                saveToLocalStorage(name, kcal, '');
+            };
+            
+            reader.readAsDataURL(file);
         } else {
+            // 沒有選照片時，秒速無圖新增
             saveToLocalStorage(name, kcal, '');
         }
     }
@@ -713,17 +732,6 @@
         updateCalorieDashboard(totalKcal, calculatedTarget);
     }
 
-    function askGeminiHelper() {
-        const allergy = document.getElementById('allergy').value || '無';
-        const realDisease = document.getElementById('realDisease').value || '無';
-        const promptText = `請幫我估算這張照片中食物的熱量。\n我的特殊狀況：過敏食物為【${allergy}】、疾病狀況為【${realDisease}】。\n請用繁體中文直接告訴我：\n1. 食物名稱\n2. 估計總熱量 (kcal)\n3. 碳水、蛋白質、脂肪的大致克數\n並請提醒我這份食物是否適合我的特殊狀況。`;
-
-        navigator.clipboard.writeText(promptText).then(() => {
-            alert('提問詞已自動複製！馬上開啟 Gemini 網站，貼上文字並上傳照片即可！');
-            window.open('https://gemini.google.com/', '_blank');
-        });
-    }
-
     function updateCalorieDashboard(totalConsumed = 0, targetKcal = 1500) {
         const targetText = document.getElementById('target-kcal-text');
         if (targetText) targetText.innerText = targetKcal;
@@ -843,6 +851,34 @@
                     y1: { type: 'linear', display: true, position: 'right', title: { display: true, text: '體重 (kg)' }, grid: { drawOnChartArea: false } }
                 }
             }
+        });
+    }
+
+    function askGeminiHelper() {
+        const p = JSON.parse(localStorage.getItem('myProfileData')) || {};
+        const age = p.birthYear ? (new Date().getFullYear() - p.birthYear) : 30;
+        const promptText = `你現在是我的專業AI減重營養師。我的基本身體數據如下：
+- 暱稱: ${p.userName || 'mata'}
+- 性別認同: ${p.gender || '女性'}
+- 年齡: ${age} 歲
+- 身高: ${p.height || 165} cm
+- 目前體重: ${p.weight || 65} kg
+- 平日運動習慣: ${p.activity || '久坐少動'}
+- 特殊狀況: ${p.realDisease || '無'}
+- 過敏食物: ${p.allergy || '無'}
+- 目標減重: ${p.targetWeight || 5} kg
+
+我剛剛上傳了一張我這餐準備要吃的食物照片，請幫我：
+1. 辨識照片中有哪些食材與菜色？
+2. 估算這整餐的大約熱量是多少大卡（kcal）？
+3. 給我一個精確的「食物名稱」與「熱量數字」，方便我直接記在我的日記網頁中。`;
+
+        navigator.clipboard.writeText(promptText).then(() => {
+            alert('🤖 AI 營養師提示詞已複製成功！現在為您開啟 Gemini，請直接貼上並上傳照片吧！');
+            window.open('https://gemini.google.com/', '_blank');
+        }).catch(() => {
+            alert('提示詞複製失敗，您可以直接前往 Gemini 上傳照片詢問熱量喔！');
+            window.open('https://gemini.google.com/', '_blank');
         });
     }
 
