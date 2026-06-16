@@ -4,8 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>我的 AI 享瘦日記 - 餐量管理個人紀錄版</title>
+    <!-- Bootstrap 美化樣式庫 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Chart.js 圖表大師 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- html2canvas 卡片轉相片黑科技 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body {
@@ -14,6 +17,85 @@
             color: #333;
             padding-bottom: 90px; /* 為底部常駐導覽列留出安全空間 */
         }
+        
+        /* 日光清新大自然風「歡迎啟動畫面」衣服樣式 */
+        #splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            /* 漸層色調：陽光黃 ➔ 森林綠，呼應日光團隊的大健康活力 */
+            background: linear-gradient(135deg, #fffbeb 0%, #f0fdf4 50%, #dcfce7 100%);
+            z-index: 9999; /* 確保蓋在最上層 */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.6s ease, visibility 0.6s ease; /* 點擊後淡出的滑順動畫 */
+            padding: 20px;
+        }
+        
+        /* 🌟 新增功能：Logo 專屬的大小與樣式服裝 */
+        .splash-logo {
+            width: 150px; /* 設定最適合手機檢視的優雅寬度 */
+            height: auto;
+            margin-bottom: 25px; /* 與下方標題保持舒適的呼吸距離 */
+            object-fit: contain;
+        }
+        
+        /* 歡迎頁面的標題設計 */
+        .splash-title {
+            color: #166534;
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .splash-subtitle {
+            color: #15803d;
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 50px;
+            letter-spacing: 1px;
+        }
+
+        /* 呼吸效果的「開啟享瘦日記」大圓圈按鈕 */
+        .start-circle-btn {
+            width: 160px; /* 稍微加寬以完美容納六個中文字 */
+            height: 160px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            font-size: 1.25rem; /* 字體微調，讓視覺最和諧 */
+            font-weight: bold;
+            border: 4px solid #bbf7d0;
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            animation: breathe-effect 2s infinite ease-in-out; /* 讓按鈕規律縮放呼吸 */
+            text-align: center;
+            padding: 10px;
+            line-height: 1.4;
+        }
+        .start-circle-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 12px 30px rgba(16, 185, 129, 0.5);
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        }
+
+        /* 呼吸動畫邏輯 */
+        @keyframes breathe-effect {
+            0% { transform: scale(0.96); box-shadow: 0 10px 20px rgba(16, 185, 129, 0.2); }
+            50% { transform: scale(1.04); box-shadow: 0 12px 30px rgba(16, 185, 129, 0.4); }
+            100% { transform: scale(0.96); box-shadow: 0 10px 20px rgba(16, 185, 129, 0.2); }
+        }
+
+        /* 原有 App 容器樣式 */
         .app-container {
             max-width: 500px;
             margin: 20px auto;
@@ -223,9 +305,24 @@
 </head>
 <body>
 
+<!-- 大健康「歡迎啟動大畫面」骨架區 -->
+<div id="splash-screen">
+    <!-- 🌟 修正：成功安插優雅的 Logo 骨架 🌟 -->
+    <img src="newlogo.png" alt="Logo" class="splash-logo">
+    
+    <div class="splash-title">我的 AI 享瘦日記</div>
+    <div class="splash-subtitle">📋 IAE國際餐量管理師指導項目</div>
+    
+    <!-- 🌟 修正：會呼吸的圓圈按鈕，內文改為「開啟享瘦日記」 🌟 -->
+    <div class="start-circle-btn" onclick="closeSplashScreen()">
+        開啟<br>享瘦日記
+    </div>
+</div>
+
 <div class="container" style="padding-bottom: 30px;">
     <div class="app-container">
         
+        <!-- 權威大頭貼與標題區 -->
         <div class="text-center mb-4">
             <h2 class="fw-bold m-0" style="color: #1e3a8a; font-size: 1.65rem;" id="main-app-title">我的 AI 享瘦日記</h2>
             <div class="mt-1 fw-bold text-success" style="font-size: 0.88rem; letter-spacing: 1px;">
@@ -233,6 +330,7 @@
             </div>
         </div>
         
+        <!-- ================= 頁面 A：飲食打卡 ================= -->
         <div id="page-diet" class="d-none">
             <div class="calorie-dashboard">
                 <div class="d-flex justify-content-between mb-2 text-muted small">
@@ -303,6 +401,7 @@
         </div>
 
 
+        <!-- ================= 頁面 B：數據報表 ================= -->
         <div id="page-reports" class="d-none">
             <div class="section-title">大健康趨勢分析圖</div>
             <div class="chart-container">
@@ -320,6 +419,7 @@
                 </li>
             </ul>
 
+            <!-- 卡片 A：餐量管理個人紀錄版（見證長圖卡） -->
             <div class="history-card-box" id="capture-history-area">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <h6 class="fw-bold text-success m-0" style="font-size: 1.05rem; letter-spacing: 0.5px;">
@@ -347,6 +447,7 @@
                 </button>
             </div>
 
+            <!-- 卡片 B：日光國際大數據管理中心 -->
             <div class="data-management-box">
                 <h6 class="fw-bold text-primary mb-2" style="font-size: 1.05rem;">
                     📊 日光國際大數據管理中心
@@ -359,16 +460,18 @@
                 </button>
             </div>
 
+            <!-- 專業保護小字 -->
             <div class="text-muted mb-2 text-center" style="font-size: 0.72rem; padding: 0 10px;">
                 ⚠️ 本數據報告來源為個人自行填寫之數據整理報告，非醫療報告，請自行保存。
             </div>
 
+            <!-- [好康報報] 專屬活動公告動態引流卡 -->
             <div class="good-news-box">
                 <h6 class="fw-bold mb-2" style="color: #ea580c; font-size: 1.05rem;">
                     🎁 [好康報報] 日光國際專屬學員福利
                 </h6>
                 <div class="text-dark mb-3" style="font-size: 0.85rem; line-height: 1.5; text-align: justify;">
-                    恭喜您成功啟動餐量管理！現在點擊下方按鈕加入 日光國際 LINE 官方帳號，並回傳您的日記暱稱，即可免費預約乙次【INBODY1對1 內臟脂肪科學代謝率深度解構評充】並加碼領取【日光AI 健康大師助理！】名額有限，立即加入！
+                    恭喜您成功啟動餐量管理！現在點擊下方按鈕加入 日光國際 LINE 官方帳號，並回傳您的日記暱稱，即可免費預約乙次【INBODY1對1 內臟脂肪科學代謝率深度解構評估】並加碼領取【日光AI 健康大師助理！】名額有限，立即加入！
                 </div>
                 <a href="https://lin.ee/vmMZ5kf" target="_blank" class="btn btn-sm w-100 fw-bold text-white text-center" style="background-color: #ea580c; border: none; border-radius: 10px; padding: 8px; font-size: 0.85rem; box-shadow: 0 4px 10px rgba(234, 88, 12, 0.2);">
                     🔥 點擊一鍵加入官方 LINE 領取好康 ➔
@@ -377,6 +480,7 @@
         </div>
 
 
+        <!-- ================= 頁面 C：個人資訊 ================= -->
         <div id="page-profile" class="d-block">
             <div class="privacy-alert p-3 mb-4 text-center">
                 🔒 <strong>安心聲明</strong>：本系統所記錄的所有數據與照片，<strong>完全儲存在您自己的手機本地瀏覽器中</strong>，絕不上傳 any 外部伺服器，不會有任何隱私外洩的風險，請放心體驗！
@@ -462,6 +566,7 @@
 
             <button class="primary-btn mb-4" onclick="saveProfile()">儲存並生成我的定制計劃 🚀</button>
 
+            <!-- 清除資訊防誤解大鈕 -->
             <div class="text-center pt-3 border-top">
                 <button class="btn btn-sm btn-outline-danger fw-bold px-3 py-2" style="border-radius: 10px; font-size: 0.85rem;" onclick="factoryResetAllData()">
                     ⚠️ 清除本機餐量管理資訊並重新設定
@@ -469,6 +574,7 @@
             </div>
         </div>
 
+        <!-- 底部常駐版權宣告全新更名引流線 -->
         <div class="footer-copyright">
             設計人<strong>mata老師</strong> | LINE官方帳號搜尋: <span class="text-primary fw-bold">Ai168百業數位平台</span>
         </div>
@@ -476,6 +582,7 @@
     </div>
 </div>
 
+<!-- 底部常駐App導覽切換列 -->
 <div class="app-bottom-nav d-none" id="main-app-navigation">
     <button class="nav-item-box" id="tab-diet" onclick="switchMainPage('diet')">
         <span class="nav-icon">🍳</span>飲食打卡
@@ -493,6 +600,17 @@
     let trendChart = null;
     let currentRange = 'day';     
     let currentCardRange = 'day'; 
+
+    // 點擊圓圈開始按鈕後，關閉歡迎幕布的「開關」控制函式
+    function closeSplashScreen() {
+        const splash = document.getElementById('splash-screen');
+        if (splash) {
+            splash.style.opacity = '0'; // 漸淡隱形
+            setTimeout(() => {
+                splash.style.visibility = 'hidden'; // 完全騰出空間給主畫面
+            }, 600); // 配合 0.6 秒的淡出時間
+        }
+    }
 
     window.onload = function() {
         const tDate = new Date();
@@ -692,19 +810,12 @@
         renderHistoryShareCard();
     }
 
-    // 🌟 核心修正：編寫真正能驅動圖表切換的 switchChartRange 函式，並加上 UI 樣式高亮控制
     function switchChartRange(range) {
         currentRange = range;
-        
-        // 1. 先把三個圖表按鈕的亮線與選中外衣脫掉
         document.getElementById('btn-chart-day').classList.remove('active');
         document.getElementById('btn-chart-week').classList.remove('active');
         document.getElementById('btn-chart-month').classList.remove('active');
-        
-        // 2. 幫當前點擊的按鈕套上藍色亮線衣服
         document.getElementById(`btn-chart-${range}`).classList.add('active');
-        
-        // 3. 重新呼叫圖表引擎，依據新時間範圍抓取對應的天數數據
         initChart();
     }
 
@@ -937,7 +1048,7 @@
         const todayRecords = records.filter(item => item.date === todayStr);
 
         if (todayRecords.length === 0) {
-            container.innerHTML = `<p class="text-muted text-center py-3" id="no-data-text">今天還沒有紀錄任何食物喔！</p>`;
+            container.innerHTML = `<p class="text-muted text-center py-3" id="no-data-text">今天還沒有紀錄 any 食物喔！</p>`;
             const calculatedTarget = calculateUserTargetKcal();
             updateCalorieDashboard(0, calculatedTarget);
             return;
