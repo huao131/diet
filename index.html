@@ -176,7 +176,7 @@
                 🔒 <strong>安心聲明</strong>：本系統所記錄的所有數據與照片，<strong>完全儲存在您自己的手機本地瀏覽器中</strong>，絕不上傳任何外部伺服器，不會有任何隱私外洩的風險，請放心體驗！
             </div>
 
-            <div class="section-title">第一步：輸入個人基本數據</div>
+            <div class="section-title">第一步：輸入身體基本數據</div>
             
             <div class="mb-3">
                 <label class="form-label" style="font-weight: 600; color: #1e3a8a;">您的暱稱 / 稱呼</label>
@@ -286,7 +286,7 @@
             <div class="card p-3 mb-4" style="background-color: #f3e8ff; border: 1px solid #c084fc;">
                 <h6 class="fw-bold" style="color: #6b21a8;">💡 拍照了不知道熱量？</h6>
                 <p class="small text-muted mb-2">點擊下方按鈕自動複製提問詞，前往Ai軟體 貼上並上傳照片,用Ai查熱量！</p>
-                <button class="ai-btn" onclick="askGeminiHelper()">1. 複製提問詞並前往 GPT或Gemini 🤖</button>
+                <button class="ai-btn" onclick="askGeminiHelper()">1.複製提問詞並前往 GPT或Gemini 🤖</button>
             </div>
 
             <div class="card p-3 mb-4">
@@ -557,7 +557,6 @@
         renderHistoryShareCard(); 
     }
 
-    // 🌟 核心高相容相片解鎖流 🌟
     function addFoodRecord() {
         const name = document.getElementById('foodName').value;
         const kcal = document.getElementById('foodKcal').value;
@@ -568,7 +567,6 @@
             return;
         }
 
-        // 如果有上傳照片，使用網頁底層 FileReader 繞過系統限制直接感應
         if (photoInput.files && photoInput.files[0]) {
             const file = photoInput.files[0];
             const reader = new FileReader();
@@ -576,7 +574,6 @@
             reader.onload = function(e) {
                 const photoResult = e.target.result;
                 
-                // 智慧防當：如果這張照片真的巨大無比（大於3.5MB），自動幫忙無感優化，防瀏覽器瞬間閃退
                 if (photoResult.length > 3500000) { 
                     const img = new Image();
                     img.onload = function() {
@@ -589,19 +586,15 @@
                     };
                     img.src = photoResult;
                 } else {
-                    // 標準照片大小，直接秒殺寫入！
                     saveToLocalStorage(name, kcal, photoResult);
                 }
             };
             
             reader.onerror = function() {
-                alert('手機系統安全阻擋讀取，自動轉換為無圖模式，數據依然會安全保存！');
                 saveToLocalStorage(name, kcal, '');
             };
-            
             reader.readAsDataURL(file);
         } else {
-            // 沒有選照片時，秒速無圖新增
             saveToLocalStorage(name, kcal, '');
         }
     }
@@ -629,6 +622,7 @@
         document.getElementById('foodPhoto').value = '';
     }
 
+    // 🌟 終極重寫：餐量管理紀錄看板——完美同步每一餐流水帳流 🌟
     function renderHistoryShareCard() {
         const container = document.getElementById('history-days-container');
         if (!container) return;
@@ -637,6 +631,7 @@
         const bedtimeHistory = JSON.parse(localStorage.getItem('myBedtimeHistory')) || {};
         const wakeupHistory = JSON.parse(localStorage.getItem('myWakeupHistory')) || {};
 
+        // 1. 先把所有有紀錄的日期排好
         let dateSet = new Set();
         dateSet.add(todayStr);
         foodRecords.forEach(r => dateSet.add(r.date));
@@ -644,6 +639,7 @@
         Object.keys(wakeupHistory).forEach(d => dateSet.add(d));
         let allSortedDates = Array.from(dateSet).sort(); 
 
+        // 2. 根據篩選紐裁剪天數
         let displayDates = [];
         if (currentCardRange === 'day') {
             displayDates = [todayStr]; 
@@ -655,37 +651,52 @@
 
         let htmlContent = '';
 
+        // 3. 雙層迴圈大改造：天 ➔ 每餐流水帳
         displayDates.forEach(date => {
             const dayFoods = foodRecords.filter(r => r.date === date);
             const bWeight = bedtimeHistory[date] ? `${bedtimeHistory[date]}k` : '-';
             const wWeight = wakeupHistory[date] ? `${wakeupHistory[date]}k` : '-';
             const weightDisplay = `🌙${bWeight} / ☀️${wWeight}`;
 
-            let dayTotalKcal = 0;
-            dayFoods.forEach(f => dayTotalKcal += f.kcal);
+            // 💡 如果這天「有吃東西」，就把每一餐通通單獨拉出來印，完美更新！
+            if (dayFoods.length > 0) {
+                // 照時間順序排好（最早吃的放下面，最新吃的放上面）
+                const sortedDayFoods = [...dayFoods].reverse();
+                
+                sortedDayFoods.forEach(food => {
+                    let previewImgHtml = `<div style="width:50px; height:50px; background:#e2e8f0; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:10px;">無</div>`;
+                    if (food.photo) {
+                        previewImgHtml = `<img src="${food.photo}" style="width:50px; height:50px; object-fit:cover; border-radius:8px;">`;
+                    }
 
-            let previewImgHtml = `<div style="width:50px; height:50px; background:#e2e8f0; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:10px;">無</div>`;
-            const foodWithPhoto = dayFoods.find(f => f.photo);
-            if (foodWithPhoto) {
-                previewImgHtml = `<img src="${foodWithPhoto.photo}" style="width:50px; height:50px; object-fit:cover; border-radius:8px;">`;
+                    htmlContent += `
+                        <div class="d-flex align-items-center justify-content-between border-bottom py-2">
+                            ${previewImgHtml}
+                            <div class="flex-grow-1 ms-3">
+                                <div class="fw-bold text-dark" style="font-size:12px;">📅 ${date} [${food.time}] | ⚖️ ${weightDisplay}</div>
+                                <div class="text-success fw-bold" style="font-size: 11px;">😋 ${food.name}</div>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-light text-primary border border-primary font-monospace small" style="font-size: 11px;">+${food.kcal} kcal</span>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                // 💡 如果這天沒記食物，只記了體重，就印出空白行，防畫面破損
+                htmlContent += `
+                    <div class="d-flex align-items-center justify-content-between border-bottom py-2">
+                        <div style="width:50px; height:50px; background:#e2e8f0; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:10px;">空</div>
+                        <div class="flex-grow-1 ms-3">
+                            <div class="fw-bold text-muted" style="font-size:12px;">📅 ${date} | ⚖️ ${weightDisplay}</div>
+                            <div class="text-muted small" style="font-size: 11px;">當日尚無進食紀錄</div>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-light text-secondary border small" style="font-size: 11px;">0 kcal</span>
+                        </div>
+                    </div>
+                `;
             }
-
-            let foodSummaryText = dayFoods.map(f => f.name).join('、');
-            if (!foodSummaryText) foodSummaryText = '當日無進食紀錄';
-            if (foodSummaryText.length > 20) foodSummaryText = foodSummaryText.substring(0, 20) + '...';
-
-            htmlContent += `
-                <div class="d-flex align-items-center justify-content-between border-bottom py-2">
-                    ${previewImgHtml}
-                    <div class="flex-grow-1 ms-3">
-                        <div class="fw-bold text-dark" style="font-size:12px;">📅 ${date} | ⚖️ ${weightDisplay}</div>
-                        <div class="text-muted" style="font-size: 11px;">${foodSummaryText}</div>
-                    </div>
-                    <div class="text-end">
-                        <span class="badge bg-light text-primary border border-primary font-monospace small" style="font-size: 11px;">${dayTotalKcal} kcal</span>
-                    </div>
-                </div>
-            `;
         });
 
         container.innerHTML = htmlContent;
@@ -880,30 +891,6 @@
             alert('提示詞複製失敗，您可以直接前往 Gemini 上傳照片詢問熱量喔！');
             window.open('https://gemini.google.com/', '_blank');
         });
-    }
-
-    function clearTodayRecords() {
-        if(confirm('確定要清空今天嗎？')) {
-            let currentRecords = JSON.parse(localStorage.getItem('myFoodRecords')) || [];
-            let historicalRecords = currentRecords.filter(item => item.date !== todayStr);
-            localStorage.setItem('myFoodRecords', JSON.stringify(historicalRecords));
-            
-            let bedtimeHistory = JSON.parse(localStorage.getItem('myBedtimeHistory')) || {};
-            let wakeupHistory = JSON.parse(localStorage.getItem('myWakeupHistory')) || {};
-            delete bedtimeHistory[todayStr];
-            delete wakeupHistory[todayStr];
-            localStorage.setItem('myBedtimeHistory', JSON.stringify(bedtimeHistory));
-            localStorage.setItem('myWakeupHistory', JSON.stringify(wakeupHistory));
-            
-            renderFoodList();
-            renderHistoryShareCard();
-            initChart();
-            
-            const circleElement = document.getElementById('kcal-circle');
-            if (circleElement) circleElement.style.background = `conic-gradient(#3b82f6 0deg, #e2e8f0 0deg)`;
-            const calculatedTarget = calculateUserTargetKcal();
-            updateCalorieDashboard(0, calculatedTarget);
-        }
     }
 </script>
 
