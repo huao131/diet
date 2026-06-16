@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>我的 AI 享瘦日記 - 餐量管理個人紀錄版</title>
+    <!-- Chart.js 數字顯示關鍵插件 (必須放在 Chart.js 之前或妥善註冊) -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <!-- Bootstrap 美化樣式庫 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Chart.js 圖表大師 -->
@@ -503,6 +505,9 @@
 </div>
 
 <script>
+    // 在最一開始就先正確向 Chart.js 註冊數字插件
+    Chart.register(ChartDataLabels);
+
     const todayStr = new Date().toLocaleDateString([], {month: '2-digit', day: '2-digit'});
     let trendChart = null;
     let currentRange = 'day';     
@@ -530,7 +535,7 @@
             document.getElementById('targetWeight').value = savedProfile.targetWeight;
             document.getElementById('targetDate').value = savedProfile.targetDate;
 
-            // 🌟 修正 2：如果以前有儲存過，重整開機時自動降落到學員最後一次停留的分頁，絕不跳頁！
+            // 🌟 記住最後停留的分頁標籤，防下拉刷新跳頁
             const lastPage = localStorage.getItem('lastActiveTab') || 'profile';
             switchMainPage(lastPage);
         } else {
@@ -557,6 +562,91 @@
         window.location.reload();
     }
 
+    // 🌟 核心畫圖引擎：完美融入強制數字顯示 (datalabels) 機制，且絕不造成語法中斷
+    function initChart() {
+        const canvas = document.getElementById('trendChart');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        
+        const foods = JSON.parse(localStorage.getItem('myFoodRecords')) || [];
+        const bed = JSON.parse(localStorage.getItem('myBedtimeHistory')) || {};
+        const wake = JSON.parse(localStorage.getItem('myWakeupHistory')) || {};
+        
+        let dateSet = new Set();
+        dateSet.add(todayStr); 
+        foods.forEach(r => { if(r.date) dateSet.add(r.date); });
+        Object.keys(bed).forEach(d => dateSet.add(d));
+        Object.keys(wakeupHistory || wake).forEach(d => dateSet.add(d));
+        let sortedDates = Array.from(dateSet).sort(); 
+
+        if (currentRange === 'day') sortedDates = [todayStr];
+        else if (currentRange === 'week') sortedDates = sortedDates.slice(-7);
+        else sortedDates = sortedDates.slice(-30);
+
+        let kcalData = [], bedtimeData = [], wakeupData = [], allWeights = [];
+        
+        sortedDates.forEach(d => {
+            kcalData.push(foods.filter(r => r.date === d).reduce((sum, item) => sum + parseInt(item.kcal || 0), 0));
+            
+            const bW = bed[d] ? parseFloat(bed[d]) : null;
+            const wW = wake[d] ? parseFloat(wake[d]) : null;
+            
+            bedtimeData.push(bW);
+            wakeupData.push(wW);
+            
+            if(bW) allWeights.push(bW);
+            if(wW) allWeights.push(wW);
+        });
+
+        // 智慧型自動縮放體重軸
+        let minW = allWeights.length ? Math.floor(Math.min(...allWeights) - 1.5) : 40;
+        let maxW = allWeights.length ? Math.ceil(Math.max(...allWeights) + 1.5) : 100;
+
+        if (trendChart) trendChart.destroy();
+        
+        trendChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: sortedDates,
+                datasets: [
+                    { 
+                        label: '熱量', data: kcalData, borderColor: '#3b82f6', yAxisID: 'yKcal', 
+                        tension: 0.3, borderWidth: 3,
+                        datalabels: { display: true, color: '#3b82f6', anchor: 'end', align: 'top', formatter: v => v > 0 ? v : '' } 
+                    },
+                    { 
+                        label: '睡前', data: bedtimeData, borderColor: '#9333ea', yAxisID: 'yWeight', borderDash: [5, 5], 
+                        tension: 0.2, spanGaps: true,
+                        datalabels: { display: true, color: '#9333ea', anchor: 'end', align: 'bottom', formatter: v => v ? v : '' } 
+                    },
+                    { 
+                        label: '起床', data: wakeupData, borderColor: '#10b981', yAxisID: 'yWeight', 
+                        tension: 0.2, spanGaps: true,
+                        datalabels: { display: true, color: '#10b981', anchor: 'end', align: 'top', formatter: v => v ? v : '' } 
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    datalabels: {
+                        font: { size: 10, weight: 'bold' }
+                    }
+                },
+                scales: { 
+                    yKcal: { type: 'linear', position: 'left', grid: { drawOnChartArea: false } }, 
+                    yWeight: { type: 'linear', position: 'right', min: minW, max: maxW } 
+                }
+            }
+        });
+    }
+
+    function switchChartRange(range) {
+        currentRange = range;
+        initChart();
+    }
+
     function switchMainPage(pageName) {
         document.getElementById('page-diet').classList.add('d-none');
         document.getElementById('page-reports').classList.add('d-none');
@@ -580,7 +670,6 @@
             document.getElementById('tab-profile').classList.add('active');
         }
 
-        // 🌟 修正 2：記住最後停留的分頁標籤，防下拉刷新跳頁
         localStorage.setItem('lastActiveTab', pageName);
 
         const nameVal = document.getElementById('userName').value.trim() || 'mata';
@@ -1018,119 +1107,35 @@
         }
     }
 
-    // 🌟 終極重寫：解放體重軸高度界限，折線與數字完美歸位大腦 🌟
-    function initChart() {
-        const canvas = document.getElementById('trendChart');
-        if (!canvas) return;
+    function askGeminiHelper() {
+        const p = JSON.parse(localStorage.getItem('myProfileData')) || {};
+        const foods = JSON.parse(localStorage.getItem('myFoodRecords')) || [];
+        const todayRecords = foods.filter(item => item.date === todayStr);
+        
+        let foodListStr = todayRecords.map(item => `- ${item.name} (${item.kcal} kcal)`).join('\n');
+        if (!foodListStr) foodListStr = "目前尚未輸入進食餐量紀錄。";
 
-        const ctx = canvas.getContext('2d');
-        const foodRecords = JSON.parse(localStorage.getItem('myFoodRecords')) || [];
-        const bedtimeHistory = JSON.parse(localStorage.getItem('myBedtimeHistory')) || {};
-        const wakeupHistory = JSON.parse(localStorage.getItem('myWakeupHistory')) || {};
+        const text = `你是一位專業的 IAE國際餐量管理師。
+請根據我的身體基本數據來深度點評我今天的飲食：
+- 暱稱: ${p.userName || 'mata'}
+- 身高: ${p.height || '165'} cm
+- 體重: ${p.weight || '65'} kg
+- 體脂率: ${p.bodyFat || '未填'} %
+- 內臟脂肪: ${p.visceralFat || '未填'} 等級
+- 運動習慣: ${p.activity || '未填'}
+- 特殊狀況: ${p.realDisease || '無'}
+- 過敏食物: ${p.allergy || '無'}
 
-        let dateSet = new Set();
-        dateSet.add(todayStr);
-        foodRecords.forEach(r => { if(r.date) dateSet.add(r.date); });
-        Object.keys(bedtimeHistory).forEach(d => dateSet.add(d));
-        Object.keys(wakeupHistory).forEach(d => dateSet.add(d));
-        let sortedDates = Array.from(dateSet).sort();
+今日已記錄飲食餐量內容：
+${foodListStr}
 
-        if (currentRange === 'day') {
-            sortedDates = [todayStr];
-        } else if (currentRange === 'week') {
-            sortedDates = sortedDates.slice(-7);
-        } else if (currentRange === 'month') {
-            sortedDates = sortedDates.slice(-30);
-        }
+請幫我解算今天的營養結構與內臟脂肪代謝率優化建議，並給予我日光團隊專屬的明日餐量調整計畫！`;
 
-        let kcalData = [];
-        let bedtimeData = [];
-        let wakeupData = [];
-        let allWeightsInputted = []; // 搜集所有體重以計算黃金適應區間
-
-        sortedDates.forEach(d => {
-            const dayFoods = foodRecords.filter(r => r.date === d);
-            const totalKcal = dayFoods.reduce((sum, item) => sum + parseInt(item.kcal || 0), 0);
-            kcalData.push(totalKcal);
-
-            const bW = bedtimeHistory[d] !== undefined ? parseFloat(bedtimeHistory[d]) : null;
-            const wW = wakeupHistory[d] !== undefined ? parseFloat(wakeupHistory[d]) : null;
-
-            bedtimeData.push(bW);
-            wakeupData.push(wW);
-
-            if(bW) allWeightsInputted.push(bW);
-            if(wW) allWeightsInputted.push(wW);
-        });
-
-        // 💡 智慧精算：動態計算折線圖右側體重軸的完美最大值與最小值
-        let finalMinWeight = 40;
-        let finalMaxWeight = 100;
-        if (allWeightsInputted.length > 0) {
-            const minInArr = Math.min(...allWeightsInputted);
-            const maxInArr = Math.max(...allWeightsInputted);
-            // 上下各留 1.5 公斤的留白舒適圈，保證折線不破圖、不飛到天花板
-            finalMinWeight = Math.floor(minInArr - 1.5);
-            finalMaxWeight = Math.ceil(maxInArr + 1.5);
-        }
-
-        if (trendChart) trendChart.destroy();
-
-        trendChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: sortedDates,
-                datasets: [
-                    {
-                        label: '攝取熱量 (kcal)',
-                        data: kcalData,
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        yAxisID: 'yKcal',
-                        tension: 0.3,
-                        borderWidth: 3
-                    },
-                    {
-                        label: '睡前體重 (kg)',
-                        data: bedtimeData,
-                        borderColor: '#9333ea',
-                        backgroundColor: 'transparent',
-                        yAxisID: 'yWeight',
-                        tension: 0.2,
-                        borderDash: [5, 5],
-                        spanGaps: true
-                    },
-                    {
-                        label: '起床體重 (kg)',
-                        data: wakeupData,
-                        borderColor: '#10b981',
-                        backgroundColor: 'transparent',
-                        yAxisID: 'yWeight',
-                        tension: 0.2,
-                        spanGaps: true
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    yKcal: {
-                        type: 'linear',
-                        position: 'left',
-                        title: { display: true, text: '熱量 (kcal)', font: { weight: 'bold' } },
-                        grid: { drawOnChartArea: false }
-                    },
-                    yWeight: {
-                        type: 'linear',
-                        position: 'right',
-                        title: { display: true, text: '體重 (kg)', font: { weight: 'bold' } },
-                        // 🌟 解放封印：直接注入黃金適應區間，數字與折線完美落入框內！ 🌟
-                        min: finalMinWeight,
-                        max: finalMaxWeight
-                    }
-                }
-            }
+        navigator.clipboard.writeText(text).then(() => {
+            alert('🤖 日光團隊引流提問詞已成功複製到剪貼簿！\n網頁將自動為您開啟 ChatGPT，請直接在聊天框「貼上」並發送，並可同時上傳您的食物照片讓 AI 精算熱量！');
+            window.open('https://chatgpt.com', '_blank');
+        }).catch(() => {
+            alert('複製失敗，請手動全選文字。');
         });
     }
 </script>
