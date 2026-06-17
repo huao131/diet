@@ -223,7 +223,6 @@
             display: block;
             margin-bottom: 2px;
         }
-        /* 💡 新增：優雅的網頁內置儲存成功動態提示樣式 */
         .success-toast-banner {
             display: none;
             background-color: #d1fae5;
@@ -294,7 +293,6 @@
                     </div>
                 </div>
                 <button class="btn btn-success btn-sm w-100 fw-bold mt-1" onclick="addDoubleWeightRecord()">同步記錄雙體重</button>
-                <!-- 💡 修正 2：取代閃退彈窗的網頁原生儲存成功提示按鈕區域 -->
                 <div id="weight-success-toast" class="success-toast-banner">✓ 雙體重科學數據已成功同步儲存！</div>
             </div>
 
@@ -337,10 +335,10 @@
             </div>
             <ul class="nav nav-tabs nav-tabs-custom mb-4" id="timeTab" role="tablist">
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="btn-chart-day" onclick="switchChartRange('day')">日紀錄</button>
+                    <button class="nav-link" id="btn-chart-day" onclick="switchChartRange('day')">日紀錄</button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="btn-chart-week" onclick="switchChartRange('week')">週趨勢</button>
+                    <button class="nav-link active" id="btn-chart-week" onclick="switchChartRange('week')">週趨勢</button>
                 </li>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="btn-chart-month" onclick="switchChartRange('month')">月分析</button>
@@ -526,7 +524,7 @@
 <script>
     const todayStr = new Date().toLocaleDateString([], {month: '2-digit', day: '2-digit'});
     let trendChart = null;
-    let currentRange = 'week'; // 💡 修正 3：將預設趨勢分析範圍改為更具大健康意義的 'week' (週趨勢)，確保能一眼看到16日與17日的連續變化！
+    let currentRange = 'week'; 
     let currentCardRange = 'day'; 
 
     window.onload = function() {
@@ -551,7 +549,6 @@
             document.getElementById('targetWeight').value = savedProfile.targetWeight;
             document.getElementById('targetDate').value = savedProfile.targetDate;
 
-            // 💡 修正 1：復原首頁邏輯。如果已有基本資料，預設重整開機時直接降落到「diet (飲食打卡首頁)」而非 profile，保護最常用的首頁體驗。
             const lastPage = localStorage.getItem('lastActiveTab') || 'diet';
             switchMainPage(lastPage);
         } else {
@@ -651,7 +648,6 @@
             allergyPrompt = `，如果遇到有我過敏的食物，也請提醒我。`;
         }
 
-        // 💡 完全保留原本規定的營養師提問詞格式
         const fullPrompt = `你是專業的營養師,請幫我看計算一下照片裡食物的總熱量${allergyPrompt}`;
         
         navigator.clipboard.writeText(fullPrompt).then(() => {
@@ -750,10 +746,6 @@
 
     function switchChartRange(range) {
         currentRange = range;
-        document.getElementById('btn-chart-day').classList.remove('active');
-        document.getElementById('btn-chart-week').classList.remove('active');
-        document.getElementById('btn-chart-month').classList.remove('active');
-        document.getElementById(`btn-chart-${range}`).classList.add('active');
         initChart();
     }
 
@@ -798,7 +790,6 @@
         initChart();
     }
 
-    // 💡 修正 2：體重登錄優化，告別傳統 Alert 彈窗造成的閃退錯覺，改用漸現式提示按鈕橫幅
     function addDoubleWeightRecord() {
         const bedtimeInput = document.getElementById('bedtimeWeight');
         const wakeupInput = document.getElementById('wakeupWeight');
@@ -819,11 +810,10 @@
         localStorage.setItem('myBedtimeHistory', JSON.stringify(bedtimeHistory));
         localStorage.setItem('myWakeupHistory', JSON.stringify(wakeupHistory));
 
-        // 顯示流暢的網頁內嵌儲存提示橫幅
         const toast = document.getElementById('weight-success-toast');
         if (toast) {
             toast.style.display = 'block';
-            setTimeout(() => { toast.style.display = 'none'; }, 3500); // 3.5秒後自動優雅隱藏
+            setTimeout(() => { toast.style.display = 'none'; }, 3500); 
         }
 
         bedtimeInput.value = '';
@@ -993,7 +983,7 @@
         const todayRecords = records.filter(item => item.date === todayStr);
 
         if (todayRecords.length === 0) {
-            container.innerHTML = `<p class="text-muted text-center py-3" id="no-data-text">今天還沒有紀錄任何食物喔！</p>`;
+            container.innerHTML = `<p class="text-muted text-center py-3" id="no-data-text">今天還沒有紀錄 any 食物喔！</p>`;
             const calculatedTarget = calculateUserTargetKcal();
             updateCalorieDashboard(0, calculatedTarget);
             return;
@@ -1073,6 +1063,7 @@
         }
     }
 
+    /* 💡 圖表大師核心重構：徹底解放 30 天曲線！ */
     function initChart() {
         const canvas = document.getElementById('trendChart');
         if (!canvas) return;
@@ -1089,23 +1080,22 @@
         Object.keys(wakeupHistory).forEach(d => dateSet.add(d));
         let sortedDates = Array.from(dateSet).sort();
 
-        // 💡 修正 3：調整日篩選與按鈕高亮邏輯，防止「日紀錄」過度切除資料。當只有16與17日等少量數據時，日與週都完整呈現，避免16號資料突然被屏蔽。
+        // 💡 智慧優化：根據選取的頁籤動態拉取「完整連續區間」，絕不切斷學員的見證數據
         if (currentRange === 'day') {
-            // 如果只有兩三天，直接全部列出以防消失；如果很多，則保留最近3天的精緻日夜波動
-            sortedDates = sortedDates.length <= 3 ? sortedDates : sortedDates.slice(-3);
+            sortedDates = sortedDates.slice(-3); // 日紀錄保留近 3 天的精緻對比
             document.getElementById('btn-chart-day').classList.add('active');
             document.getElementById('btn-chart-week').classList.remove('active');
             document.getElementById('btn-chart-month').classList.remove('active');
         } else if (currentRange === 'week') {
-            sortedDates = sortedDates.slice(-7);
+            sortedDates = sortedDates.slice(-7); // 週趨勢拉出連續 7 天數據
             document.getElementById('btn-chart-day').classList.remove('active');
             document.getElementById('btn-chart-week').classList.add('active');
             document.getElementById('btn-chart-month').classList.remove('active');
         } else if (currentRange === 'month') {
-            sortedDates = sortedDates.slice(-30);
+            sortedDates = sortedDates.slice(-30); // 🌟 月分析完美解放！完整畫出最多 30 天的黃金大健康瘦身曲線！
             document.getElementById('btn-chart-day').classList.remove('active');
             document.getElementById('btn-chart-week').classList.remove('active');
-            document.getElementById('btn-chart-month').classList.add('active');
+            document.getElementById('btn-chart-month').classList.add('add', 'active');
         }
 
         let kcalData = [];
@@ -1161,7 +1151,7 @@
                         yAxisID: 'yWeight',
                         tension: 0.2,
                         borderDash: [5, 5],
-                        spanGaps: true
+                        spanGaps: true // 💡 允許跨日連線，保證曲線連續不中斷！
                     },
                     {
                         label: '起床體重 (kg)',
@@ -1170,7 +1160,7 @@
                         backgroundColor: 'transparent',
                         yAxisID: 'yWeight',
                         tension: 0.2,
-                        spanGaps: true
+                        spanGaps: true // 💡 允許跨日連線，保證曲線連續不中斷！
                     }
                 ]
             },
