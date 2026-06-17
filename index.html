@@ -4,11 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>我的 AI 享瘦日記 - 餐量管理個人紀錄版</title>
-    <!-- Bootstrap 美化樣式庫 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Chart.js 圖表大師 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- html2canvas 卡片轉相片黑科技 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body {
@@ -16,7 +13,73 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: #333;
             padding-bottom: 90px; /* 為底部常駐導覽列留出安全空間 */
+            margin: 0;
         }
+        
+        /* 💡 全新還原：線上 Sample 版「呼吸感」歡迎大首頁樣式 */
+        #welcome-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #ffffff 0%, #e6f7ed 100%);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+        .welcome-logo-box {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .welcome-title {
+            color: #1e3a8a;
+            font-size: 2rem;
+            font-weight: bold;
+            margin-top: 15px;
+            letter-spacing: 1px;
+        }
+        .welcome-subtitle {
+            font-weight: bold;
+            color: #10b981;
+            font-size: 0.95rem;
+            margin-top: 5px;
+        }
+        
+        /* 🌟 呼吸感核心動畫開關：讓綠色圓鈕如同呼吸般自然起伏 */
+        .breath-btn {
+            width: 160px;
+            height: 160px;
+            background-color: #10b981;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 1.15rem;
+            font-weight: bold;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 12px 30px rgba(16, 185, 129, 0.3);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            animation: pulseBreath 2.5s infinite ease-in-out; /* 啟動呼吸循環 */
+        }
+        .breath-btn:active {
+            transform: scale(0.92);
+            background-color: #059669;
+        }
+        
+        @keyframes pulseBreath {
+            0% { transform: scale(1); box-shadow: 0 12px 30px rgba(16, 185, 129, 0.3); }
+            50% { transform: scale(1.06); box-shadow: 0 16px 40px rgba(16, 185, 129, 0.5); }
+            100% { transform: scale(1); box-shadow: 0 12px 30px rgba(16, 185, 129, 0.3); }
+        }
+
+        /* 主程式容器排版 */
         .app-container {
             max-width: 500px;
             margin: 20px auto;
@@ -244,10 +307,25 @@
 </head>
 <body>
 
+<div id="welcome-screen">
+    <div class="welcome-logo-box">
+        <svg width="80" height="100" viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin: 0 auto;">
+            <path d="M70 20C65 20 58 25 55 35C52 45 60 65 45 80C35 90 25 85 25 95C25 100 45 102 60 95C75 88 72 70 65 55C60 45 75 25 70 20Z" stroke="#8b7355" stroke-width="4" stroke-linecap="round"/>
+            <circle cx="62" cy="40" r="4" fill="#8b7355"/>
+            <line x1="40" y1="105" x2="75" y2="105" stroke="#8b7355" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+        <div class="welcome-title">我的 AI 享瘦日記</div>
+        <div class="welcome-subtitle">📋 IAE國際餐量管理師指導項目</div>
+    </div>
+    <button class="breath-btn" onclick="exitWelcomeScreen()">
+        <span>開啟</span>
+        <span style="font-size: 0.95rem; margin-top: 4px; font-weight: normal; letter-spacing: 1px;">享瘦日記</span>
+    </button>
+</div>
+
 <div class="container" style="padding-bottom: 30px;">
     <div class="app-container">
         
-        <!-- 權威大頭貼與標題區 -->
         <div class="text-center mb-4">
             <h2 class="fw-bold m-0" style="color: #1e3a8a; font-size: 1.65rem;" id="main-app-title">我的 AI 享瘦日記</h2>
             <div class="mt-1 fw-bold text-success" style="font-size: 0.88rem; letter-spacing: 1px;">
@@ -255,7 +333,6 @@
             </div>
         </div>
         
-        <!-- ================= 頁面 A：飲食打卡（首頁主核心） ================= -->
         <div id="page-diet" class="d-none">
             <div class="calorie-dashboard">
                 <div class="d-flex justify-content-between mb-2 text-muted small">
@@ -327,7 +404,6 @@
         </div>
 
 
-        <!-- ================= 🌟 頁面 B：數據報表 ================= -->
         <div id="page-reports" class="d-none">
             <div class="section-title">大健康趨勢分析圖</div>
             <div class="chart-container">
@@ -345,7 +421,6 @@
                 </li>
             </ul>
 
-            <!-- 卡片 A：餐量管理個人紀錄版（見證長圖卡） -->
             <div class="history-card-box" id="capture-history-area">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <h6 class="fw-bold text-success m-0" style="font-size: 1.05rem; letter-spacing: 0.5px;">
@@ -373,7 +448,6 @@
                 </button>
             </div>
 
-            <!-- 卡片 B：日光國際大數據管理中心 -->
             <div class="data-management-box">
                 <h6 class="fw-bold text-primary mb-2" style="font-size: 1.05rem;">
                     📊 日光國際大數據管理中心
@@ -386,12 +460,10 @@
                 </button>
             </div>
 
-            <!-- 在好康報報卡片上方增加一行專業保護小字 -->
             <div class="text-muted mb-2 text-center" style="font-size: 0.72rem; padding: 0 10px;">
                 ⚠️ 本數據報告來源為個人自行填寫之數據整理報告，非醫療報告，請自行保存。
             </div>
 
-            <!-- [好康報報] 專屬活動公告動態引流卡 -->
             <div class="good-news-box">
                 <h6 class="fw-bold mb-2" style="color: #ea580c; font-size: 1.05rem;">
                     🎁 [好康報報] 日光國際專屬學員福利
@@ -406,7 +478,6 @@
         </div>
 
 
-        <!-- ================= 頁面 C：個人資訊 ================= -->
         <div id="page-profile" class="d-block">
             <div class="privacy-alert p-3 mb-4 text-center">
                 🔒 <strong>安心聲明</strong>：本系統所記錄的所有數據與照片，<strong>完全儲存在您自己的手機本地瀏覽器中</strong>，絕不上傳 any 外部伺服器，不會有任何隱私外洩的風險，請放心體驗！
@@ -492,7 +563,6 @@
 
             <button class="primary-btn mb-4" onclick="saveProfile()">儲存並生成我的定制計劃 🚀</button>
 
-            <!-- 清除資訊防誤解大鈕 -->
             <div class="text-center pt-3 border-top">
                 <button class="btn btn-sm btn-outline-danger fw-bold px-3 py-2" style="border-radius: 10px; font-size: 0.85rem;" onclick="factoryResetAllData()">
                     ⚠️ 清除本機餐量管理資訊並重新設定
@@ -500,7 +570,6 @@
             </div>
         </div>
 
-        <!-- 底部常駐版權宣告全新更名引流線 -->
         <div class="footer-copyright">
             設計人<strong>mata老師</strong> | LINE官方帳號搜尋: <span class="text-primary fw-bold">Ai168百業數位平台</span>
         </div>
@@ -508,7 +577,6 @@
     </div>
 </div>
 
-<!-- 底部常駐App導覽切換列 -->
 <div class="app-bottom-nav d-none" id="main-app-navigation">
     <button class="nav-item-box" id="tab-diet" onclick="switchMainPage('diet')">
         <span class="nav-icon">🍳</span>飲食打卡
@@ -549,6 +617,7 @@
             document.getElementById('targetWeight').value = savedProfile.targetWeight;
             document.getElementById('targetDate').value = savedProfile.targetDate;
 
+            // 💡 修正控制權：如果有快取舊分頁，退出歡迎頁後仍能完美對齊學員最後停留的分頁
             const lastPage = localStorage.getItem('lastActiveTab') || 'diet';
             switchMainPage(lastPage);
         } else {
@@ -561,6 +630,18 @@
         renderHistoryShareCard(); 
         initChart();
     };
+
+    /* 💡 全新功能：點擊綠色圓鈕後的優雅淡出呼吸畫面函數 */
+    function exitWelcomeScreen() {
+        const screen = document.getElementById('welcome-screen');
+        if (screen) {
+            screen.style.opacity = '0';
+            screen.style.transform = 'scale(1.1)';
+            setTimeout(() => {
+                screen.style.display = 'none';
+            }, 500); // 配合 0.5s 動態優雅淡出
+        }
+    }
 
     function factoryResetAllData() {
         const msg1 = "⚠️ 您即將啟動餐量管理資訊重置。\n這將會徹底抹除您這台手機上記錄的所有飲食日記、照片、前日睡前/今日起床雙體重以及個人數據。\n\n";
@@ -788,7 +869,7 @@
         renderFoodList();
         renderHistoryShareCard();
         initChart();
-    }
+    </div>
 
     function addDoubleWeightRecord() {
         const bedtimeInput = document.getElementById('bedtimeWeight');
@@ -1063,7 +1144,6 @@
         }
     }
 
-    /* 💡 圖表大師核心重構：徹底解放 30 天曲線！ */
     function initChart() {
         const canvas = document.getElementById('trendChart');
         if (!canvas) return;
@@ -1080,22 +1160,21 @@
         Object.keys(wakeupHistory).forEach(d => dateSet.add(d));
         let sortedDates = Array.from(dateSet).sort();
 
-        // 💡 智慧優化：根據選取的頁籤動態拉取「完整連續區間」，絕不切斷學員的見證數據
         if (currentRange === 'day') {
-            sortedDates = sortedDates.slice(-3); // 日紀錄保留近 3 天的精緻對比
+            sortedDates = sortedDates.slice(-3); 
             document.getElementById('btn-chart-day').classList.add('active');
             document.getElementById('btn-chart-week').classList.remove('active');
             document.getElementById('btn-chart-month').classList.remove('active');
         } else if (currentRange === 'week') {
-            sortedDates = sortedDates.slice(-7); // 週趨勢拉出連續 7 天數據
+            sortedDates = sortedDates.slice(-7); 
             document.getElementById('btn-chart-day').classList.remove('active');
             document.getElementById('btn-chart-week').classList.add('active');
             document.getElementById('btn-chart-month').classList.remove('active');
         } else if (currentRange === 'month') {
-            sortedDates = sortedDates.slice(-30); // 🌟 月分析完美解放！完整畫出最多 30 天的黃金大健康瘦身曲線！
+            sortedDates = sortedDates.slice(-30); 
             document.getElementById('btn-chart-day').classList.remove('active');
             document.getElementById('btn-chart-week').classList.remove('active');
-            document.getElementById('btn-chart-month').classList.add('add', 'active');
+            document.getElementById('btn-chart-month').classList.add('active');
         }
 
         let kcalData = [];
@@ -1135,7 +1214,7 @@
                 labels: sortedDates,
                 datasets: [
                     {
-                        label: '攝取熱量 (kcal)',
+                        label: '擺取熱量 (kcal)',
                         data: kcalData,
                         borderColor: '#3b82f6',
                         backgroundColor: 'rgba(59, 130, 246, 0.1)',
@@ -1151,7 +1230,7 @@
                         yAxisID: 'yWeight',
                         tension: 0.2,
                         borderDash: [5, 5],
-                        spanGaps: true // 💡 允許跨日連線，保證曲線連續不中斷！
+                        spanGaps: true 
                     },
                     {
                         label: '起床體重 (kg)',
@@ -1160,7 +1239,7 @@
                         backgroundColor: 'transparent',
                         yAxisID: 'yWeight',
                         tension: 0.2,
-                        spanGaps: true // 💡 允許跨日連線，保證曲線連續不中斷！
+                        spanGaps: true 
                     }
                 ]
             },
