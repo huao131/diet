@@ -364,23 +364,32 @@
             <!-- 每日體重科學打卡卡片 -->
             <div class="card p-3 mb-4" style="background-color: #f0fdf4; border: 1px solid #bbf7d0;">
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h6 class="fw-bold text-success m-0">⚖️ 每日體重科學打卡</h6>
-                    <!-- 🌟 新增視覺優化：動態打卡狀態標籤 🌟 -->
+                    <h6 class="fw-bold text-success m-0">⚖️ 每日身體核心數據科學打卡</h6>
+                    <!-- 動態打卡狀態標籤 -->
                     <span class="badge bg-warning text-dark fw-bold" id="weight-status-badge" style="font-size: 0.75rem; padding: 4px 8px;">⚠️ 今日尚未存檔</span>
                 </div>
                 
                 <div class="row g-2 mb-2">
-                    <div class="col">
+                    <div class="col-6">
                         <label class="small text-muted mb-1">🌙 前日睡前體重</label>
                         <input type="number" step="0.1" id="bedtimeWeight" class="form-control form-control-sm" placeholder="睡前 (kg)">
                     </div>
-                    <div class="col">
+                    <div class="col-6">
                         <label class="small text-muted mb-1">☀️ 今日起床體重</label>
                         <input type="number" step="0.1" id="wakeupWeight" class="form-control form-control-sm" placeholder="起床 (kg)">
                     </div>
+                    <!-- 🌟 升級擴充：每日體脂與內臟脂肪打卡欄位 🌟 -->
+                    <div class="col-6">
+                        <label class="small text-success fw-bold mb-1">🩸 今日體脂率 (%)</label>
+                        <input type="number" step="0.1" id="dailyBodyFat" class="form-control form-control-sm" placeholder="體脂率 (%)">
+                    </div>
+                    <div class="col-6">
+                        <label class="small text-success fw-bold mb-1">🫁 今日內臟脂肪</label>
+                        <input type="number" step="0.5" id="dailyVisceralFat" class="form-control form-control-sm" placeholder="內脂等級">
+                    </div>
                 </div>
-                <div class="text-muted small mb-2" style="font-size: 11px;">* 提示：按下方按鈕將同步更新右側大健康趨勢折線圖。</div>
-                <button class="btn btn-success btn-sm w-100 fw-bold mt-1" id="sync-weight-btn" onclick="addDoubleWeightRecord()">同步記錄雙體重</button>
+                <div class="text-muted small mb-2" style="font-size: 11px;">* 提示：按下方按鈕將同步保存所有數據，並更新右側大健康趨勢折線圖。</div>
+                <button class="btn btn-success btn-sm w-100 fw-bold mt-1" id="sync-weight-btn" onclick="addDoubleWeightRecord()">同步記錄每日核心數據</button>
             </div>
 
             <div class="card p-3 mb-4" style="background-color: #f3e8ff; border: 1px solid #c084fc;">
@@ -422,6 +431,7 @@
             </div>
             <ul class="nav nav-tabs nav-tabs-custom mb-4" id="timeTab" role="tablist">
                 <li class="nav-item" role="presentation">
+                    <!-- 🌟 修正：刷新留在原小分頁狀態 🌟 -->
                     <button class="nav-link active" id="btn-chart-day" onclick="switchChartRange('day')">日紀錄</button>
                 </li>
                 <li class="nav-item" role="presentation">
@@ -447,6 +457,7 @@
                 <div class="d-flex justify-content-between align-items-center mb-3 p-2 border-bottom" style="background-color: #f8fafc; border-radius: 10px;">
                     <span class="small text-muted fw-bold">選擇資料範圍：</span>
                     <div class="btn-group btn-group-toggle" role="group">
+                        <!-- 🌟 修正：刷新留在原小分頁狀態 🌟 -->
                         <button type="button" class="btn btn-sm btn-outline-success active" id="btn-card-day" onclick="switchCardRange('day')">今日</button>
                         <button type="button" class="btn btn-sm btn-outline-success" id="btn-card-week" onclick="switchCardRange('week')">7天週檔</button>
                         <button type="button" class="btn btn-sm btn-outline-success" id="btn-card-month" onclick="switchCardRange('month')">30天月檔</button>
@@ -611,8 +622,10 @@
 <script>
     const todayStr = new Date().toLocaleDateString([], {month: '2-digit', day: '2-digit'});
     let trendChart = null;
-    let currentRange = 'day';     
-    let currentCardRange = 'day'; 
+    
+    // 🌟 修正：將小卡片與圖表分頁改為 SessionStorage (刷新時鎖定留在原分頁，關閉後重開則重算) 🌟
+    let currentRange = sessionStorage.getItem('sessionChartRange') || 'day';     
+    let currentCardRange = sessionStorage.getItem('sessionCardRange') || 'day'; 
 
     // 點擊圓圈開始按鈕後，關閉歡迎幕布的「開關」控制函式
     function closeSplashScreen() {
@@ -623,6 +636,8 @@
                 splash.style.visibility = 'hidden'; // 完全騰出空間給主畫面
             }, 600); // 配合 0.6 秒的淡出時間
         }
+        // 🌟 核心修正：記錄這一次分頁開啟中已經按過開始，刷新時就不再跳大畫面 🌟
+        sessionStorage.setItem('sessionSplashClosed', 'true');
     }
 
     window.onload = function() {
@@ -631,6 +646,10 @@
         document.getElementById('targetDate').value = tDate.toISOString().split('T')[0];
 
         const savedProfile = JSON.parse(localStorage.getItem('myProfileData'));
+        
+        // 🌟 核心修正：判斷是不是刷新。如果 session 有關閉紀錄且有上次分頁，就留在原地 🌟
+        const isSplashClosedThisSession = sessionStorage.getItem('sessionSplashClosed') === 'true';
+        
         if (savedProfile) {
             document.getElementById('userName').value = savedProfile.userName || 'mata';
             document.getElementById('birthYear').value = savedProfile.birthYear;
@@ -647,60 +666,102 @@
             document.getElementById('targetWeight').value = savedProfile.targetWeight;
             document.getElementById('targetDate').value = savedProfile.targetDate;
 
-            const lastPage = localStorage.getItem('lastActiveTab') || 'profile';
-            switchMainPage(lastPage);
+            // 判斷分頁跳轉：如果是同一次分頁刷新，去讀 sessionStorage；如果是關掉重新打開，一律回到預設或首頁
+            let targetTab = 'profile';
+            if (isSplashClosedThisSession) {
+                targetTab = sessionStorage.getItem('sessionActiveTab') || 'profile';
+                // 既然是同一次 session 刷新，直接把大畫面藏起來
+                const splash = document.getElementById('splash-screen');
+                if (splash) splash.style.display = 'none';
+            } else {
+                // 全新關閉後點擊進來：清除 session 狀態，重回預設首頁
+                sessionStorage.removeItem('sessionActiveTab');
+                targetTab = 'profile'; 
+            }
+            switchMainPage(targetTab);
         } else {
             switchMainPage('profile');
             document.getElementById('main-app-navigation').classList.add('d-none');
         }
 
+        // 刷新小卡片的點燈視覺化維持
+        updateSmallCardTabsVisual();
+
         checkAndResetDailyCircle();
         renderFoodList();
         renderHistoryShareCard(); 
         initChart();
-        checkAndRenderWeightStatus(); // 🌟 新增功能：網頁開機時自動檢查今天輸入過體重了沒 🌟
+        checkAndRenderWeightStatus(); 
     };
 
-    // 🌟 新增功能：智慧檢查今天輸入過了沒，並渲染畫面提示 🌟
+    // 🌟 輔助函式：讓三個小卡片刷新時點燈狀態正確 🌟
+    function updateSmallCardTabsVisual() {
+        // 圖表小卡片
+        ['day', 'week', 'month'].forEach(r => {
+            const btn = document.getElementById(`btn-chart-${r}`);
+            if(btn) btn.classList.remove('active');
+        });
+        const activeChartBtn = document.getElementById(`btn-chart-${currentRange}`);
+        if(activeChartBtn) activeChartBtn.classList.add('active');
+
+        // 長圖卡小卡片
+        ['day', 'week', 'month'].forEach(r => {
+            const btn = document.getElementById(`btn-card-${r}`);
+            if(btn) btn.classList.remove('active');
+        });
+        const activeCardBtn = document.getElementById(`btn-card-${currentCardRange}`);
+        if(activeCardBtn) activeCardBtn.classList.add('active');
+    }
+
+    // 🌟 修正與強化：智慧檢查今天輸入過了沒，並渲染畫面提示 🌟
     function checkAndRenderWeightStatus() {
         const bedtimeHistory = JSON.parse(localStorage.getItem('myBedtimeHistory')) || {};
         const wakeupHistory = JSON.parse(localStorage.getItem('myWakeupHistory')) || {};
+        // 讀取每日新增的體脂與內脂歷史
+        const dailyFatHistory = JSON.parse(localStorage.getItem('myDailyBodyFatHistory')) || {};
+        const dailyVisceralHistory = JSON.parse(localStorage.getItem('myDailyVisceralHistory')) || {};
         
         const bWeight = bedtimeHistory[todayStr];
         const wWeight = wakeupHistory[todayStr];
+        const dFat = dailyFatHistory[todayStr];
+        const dVisceral = dailyVisceralHistory[todayStr];
         
         const badge = document.getElementById('weight-status-badge');
         const syncBtn = document.getElementById('sync-weight-btn');
         const bedtimeInput = document.getElementById('bedtimeWeight');
         const wakeupInput = document.getElementById('wakeupWeight');
+        const dailyFatInput = document.getElementById('dailyBodyFat');
+        const dailyVisceralInput = document.getElementById('dailyVisceralFat');
         
         if (!badge) return;
         
-        // 如果睡前跟起床體重都有了，代表今日大功告成
-        if (bWeight !== undefined || wWeight !== undefined) {
-            badge.innerText = "✅ 今日雙體重已科學存檔！";
+        // 如果有任何一項輸入成功，代表今日已存檔
+        if (bWeight !== undefined || wakeupInput.value !== "" || dFat !== undefined || dVisceral !== undefined) {
+            badge.innerText = "今日已存檔 ✅";
             badge.className = "badge bg-success text-white fw-bold";
-            syncBtn.innerText = "重新更新今日體重 🔄";
+            syncBtn.innerText = "重新更新今日核心數據 🔄";
             
-            // 自動把存檔的數字填回輸入框，讓學員知道之前打卡是多少數字（防健忘）
+            // 自動把存檔的數字填回輸入框，讓學員知道之前打卡是多少數字
             if (bWeight !== undefined && bedtimeInput && !bedtimeInput.value) bedtimeInput.value = bWeight;
             if (wWeight !== undefined && wakeupInput && !wakeupInput.value) wakeupInput.value = wWeight;
+            if (dFat !== undefined && dailyFatInput && !dailyFatInput.value) dailyFatInput.value = dFat;
+            if (dVisceral !== undefined && dailyVisceralInput && !dailyVisceralInput.value) dailyVisceralInput.value = dVisceral;
         } else {
-            // 如果手機大腦空空如也，顯示警告提醒學員打卡
             badge.innerText = "⚠️ 今日尚未存檔";
             badge.className = "badge bg-warning text-dark fw-bold";
-            syncBtn.innerText = "同步記錄雙體重";
+            syncBtn.innerText = "同步記錄每日核心數據";
         }
     }
 
     function factoryResetAllData() {
-        const msg1 = "⚠️ 您即將啟動餐量管理資訊重置。\n這將會徹底抹除您這台手機上記錄的所有飲食日記、照片、前日睡前/今日起床雙體重以及個人數據。\n\n";
+        const msg1 = "⚠️ 您即將啟動餐量管理資訊重置。\n這將會徹底抹除您這台手機上記錄的所有飲食日記、照片、體重、體脂、內臟脂肪以及個人數據。\n\n";
         const msg2 = "💡 資訊重置不會影響手機其他所有APP的資訊。\n\n";
         const msg3 = "確定要清空個人數據重新開始嗎？";
         
         if (!confirm(msg1 + msg2 + msg3)) return;
         
         localStorage.clear();
+        sessionStorage.clear();
         alert('✨ 餐量管理數據已安全清空！網頁將自動重置載入。');
         window.location.reload();
     }
@@ -719,7 +780,7 @@
         if (pageName === 'diet') {
             document.getElementById('page-diet').classList.remove('d-none');
             document.getElementById('tab-diet').classList.add('active');
-            checkAndRenderWeightStatus(); // 🌟 切換回打卡頁時，再次觸發狀態檢查 🌟
+            checkAndRenderWeightStatus(); 
         } else if (pageName === 'reports') {
             document.getElementById('page-reports').classList.remove('d-none');
             document.getElementById('tab-reports').classList.add('active');
@@ -729,7 +790,8 @@
             document.getElementById('tab-profile').classList.add('active');
         }
 
-        localStorage.setItem('lastActiveTab', pageName);
+        // 🌟 修正：使用 sessionStorage 記住當前主分頁，刷新時留原地 🌟
+        sessionStorage.setItem('sessionActiveTab', pageName);
 
         const nameVal = document.getElementById('userName').value.trim() || 'mata';
         document.getElementById('main-app-title').innerText = `${nameVal} 的 AI 享瘦日記`;
@@ -804,11 +866,14 @@
         });
     }
 
+    // 🌟 修正與重寫：導出包含每日 暱稱、體重、動態體脂、動態內脂的完整大數據表 🌟
     function exportDataToExcel() {
         const p = JSON.parse(localStorage.getItem('myProfileData')) || {};
         const foodRecords = JSON.parse(localStorage.getItem('myFoodRecords')) || [];
         const bedtimeHistory = JSON.parse(localStorage.getItem('myBedtimeHistory')) || {};
         const wakeupHistory = JSON.parse(localStorage.getItem('myWakeupHistory')) || {};
+        const dailyFatHistory = JSON.parse(localStorage.getItem('myDailyBodyFatHistory')) || {};
+        const dailyVisceralHistory = JSON.parse(localStorage.getItem('myDailyVisceralHistory')) || {};
 
         if (foodRecords.length === 0 && Object.keys(bedtimeHistory).length === 0 && Object.keys(wakeupHistory).length === 0) {
             alert('目前手機中還沒有任何餐量數據可導出喔！');
@@ -816,22 +881,26 @@
         }
 
         let csvContent = "\uFEFF"; 
-        csvContent += "暱稱,日期,前日睡前體重(kg),今日起床體重(kg),體脂率(%),內臟脂肪等級\n";
+        csvContent += "暱稱,日期,前日睡前體重(kg),今日起床體重(kg),今日動態體脂率(%),今日動態內臟脂肪等級\n";
 
         let dateSet = new Set();
         foodRecords.forEach(r => dateSet.add(r.date));
         Object.keys(bedtimeHistory).forEach(d => dateSet.add(d));
         Object.keys(wakeupHistory).forEach(d => dateSet.add(d));
+        Object.keys(dailyFatHistory).forEach(d => dateSet.add(d));
+        Object.keys(dailyVisceralHistory).forEach(d => dateSet.add(d));
         let allSortedDates = Array.from(dateSet).sort();
 
-        const fatStr = p.bodyFat ? `${p.bodyFat}%` : "-";
-        const vFatStr = p.visceralFat ? `${p.visceralFat}` : "-";
         const nickName = p.userName || "未填";
 
         allSortedDates.forEach(date => {
             const bWeight = bedtimeHistory[date] || "-";
             const wWeight = wakeupHistory[date] || "-";
-            csvContent += `${nickName},${date},${bWeight},${wWeight},${fatStr},${vFatStr}\n`;
+            // 優先讀取當天打卡填寫的動態數據，沒有才去抓個人設定的
+            const dFat = dailyFatHistory[date] || p.bodyFat || "-";
+            const dVisc = dailyVisceralHistory[date] || p.visceralFat || "-";
+            
+            csvContent += `${nickName},${date},${bWeight},${wWeight},${dFat},${dVisc}\n`;
         });
 
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -848,8 +917,11 @@
         alert('📊 日光國際核心大數據 Excel 表格已成功打包下載！');
     }
 
+    // 🌟 修正：刷新留原地，將分頁狀態同步鎖定進 SessionStorage 🌟
     function switchCardRange(range) {
         currentCardRange = range;
+        sessionStorage.setItem('sessionCardRange', range); // 記憶小卡片分頁
+        
         document.getElementById('btn-card-day').classList.remove('active');
         document.getElementById('btn-card-week').classList.remove('active');
         document.getElementById('btn-card-month').classList.remove('active');
@@ -857,8 +929,11 @@
         renderHistoryShareCard();
     }
 
+    // 🌟 修正：刷新留原地，將分頁狀態同步鎖定進 SessionStorage 🌟
     function switchChartRange(range) {
         currentRange = range;
+        sessionStorage.setItem('sessionChartRange', range); // 記憶圖表小卡片分頁
+        
         document.getElementById('btn-chart-day').classList.remove('active');
         document.getElementById('btn-chart-week').classList.remove('active');
         document.getElementById('btn-chart-month').classList.remove('active');
@@ -892,6 +967,8 @@
                 localStorage.removeItem('myFoodRecords');
                 localStorage.removeItem('myBedtimeHistory');
                 localStorage.removeItem('myWakeupHistory');
+                localStorage.removeItem('myDailyBodyFatHistory');
+                localStorage.removeItem('myDailyVisceralHistory');
             }
         }
 
@@ -907,31 +984,41 @@
         initChart();
     }
 
+    // 🌟 核心增修：同步保存雙體重、每日體脂、每日內臟脂肪 🌟
     function addDoubleWeightRecord() {
         const bedtimeInput = document.getElementById('bedtimeWeight');
         const wakeupInput = document.getElementById('wakeupWeight');
+        const dailyFatInput = document.getElementById('dailyBodyFat');
+        const dailyVisceralInput = document.getElementById('dailyVisceralFat');
+        
         const bedtimeVal = parseFloat(bedtimeInput.value);
         const wakeupVal = parseFloat(wakeupInput.value);
+        const dailyFatVal = parseFloat(dailyFatInput.value);
+        const dailyVisceralVal = parseFloat(dailyVisceralInput.value);
 
-        if (!bedtimeVal && !wakeupVal) {
-            alert('請填寫體重！');
+        if (!bedtimeVal && !wakeupVal && !dailyFatVal && !dailyVisceralVal) {
+            alert('請至少填寫一項數據再進行保存喔！');
             return;
         }
 
         let bedtimeHistory = JSON.parse(localStorage.getItem('myBedtimeHistory')) || {};
         let wakeupHistory = JSON.parse(localStorage.getItem('myWakeupHistory')) || {};
+        let dailyFatHistory = JSON.parse(localStorage.getItem('myDailyBodyFatHistory')) || {};
+        let dailyVisceralHistory = JSON.parse(localStorage.getItem('myDailyVisceralHistory')) || {};
 
         if (bedtimeVal) bedtimeHistory[todayStr] = bedtimeVal;
         if (wakeupVal) wakeupHistory[todayStr] = wakeupVal;
+        if (dailyFatVal) dailyFatHistory[todayStr] = dailyFatVal;
+        if (dailyVisceralVal) dailyVisceralHistory[todayStr] = dailyVisceralVal;
 
         localStorage.setItem('myBedtimeHistory', JSON.stringify(bedtimeHistory));
         localStorage.setItem('myWakeupHistory', JSON.stringify(wakeupHistory));
+        localStorage.setItem('myDailyBodyFatHistory', JSON.stringify(dailyFatHistory));
+        localStorage.setItem('myDailyVisceralHistory', JSON.stringify(dailyVisceralHistory));
 
-        alert('雙體重紀錄成功！');
+        alert('今日已存檔 ✅');
         
-        // 🌟 修正：不急著清空，而是觸發重新渲染，讓輸入框保留數字並亮起綠色勾勾 🌟
         checkAndRenderWeightStatus();
-        
         initChart(); 
         renderHistoryShareCard(); 
     }
@@ -1010,7 +1097,7 @@
     }
 
     function clearTodayRecords() {
-        if (!confirm('⚠️ 確定要清除「今天」的所有飲食與體重紀錄嗎？此動作無法復原喔！')) return;
+        if (!confirm('⚠️ 確定要清除「今天」的所有飲食與體重體脂紀錄嗎？此動作無法復原喔！')) return;
         
         let currentRecords = JSON.parse(localStorage.getItem('myFoodRecords')) || [];
         currentRecords = currentRecords.filter(item => item.date !== todayStr);
@@ -1018,16 +1105,29 @@
 
         let bedtimeHistory = JSON.parse(localStorage.getItem('myBedtimeHistory')) || {};
         let wakeupHistory = JSON.parse(localStorage.getItem('myWakeupHistory')) || {};
+        let dailyFatHistory = JSON.parse(localStorage.getItem('myDailyBodyFatHistory')) || {};
+        let dailyVisceralHistory = JSON.parse(localStorage.getItem('myDailyVisceralHistory')) || {};
+        
         delete bedtimeHistory[todayStr];
         delete wakeupHistory[todayStr];
+        delete dailyFatHistory[todayStr];
+        delete dailyVisceralHistory[todayStr];
+        
         localStorage.setItem('myBedtimeHistory', JSON.stringify(bedtimeHistory));
         localStorage.setItem('myWakeupHistory', JSON.stringify(wakeupHistory));
+        localStorage.setItem('myDailyBodyFatHistory', JSON.stringify(dailyFatHistory));
+        localStorage.setItem('myDailyVisceralHistory', JSON.stringify(dailyVisceralHistory));
 
-        // 🌟 修正：清除今日紀錄時，同步將體重打卡狀態恢復成黃色未存檔狀態，輸入框清空 🌟
         const bedtimeInput = document.getElementById('bedtimeWeight');
         const wakeupInput = document.getElementById('wakeupWeight');
+        const dailyFatInput = document.getElementById('dailyBodyFat');
+        const dailyVisceralInput = document.getElementById('dailyVisceralFat');
+        
         if(bedtimeInput) bedtimeInput.value = '';
         if(wakeupInput) wakeupInput.value = '';
+        if(dailyFatInput) dailyFatInput.value = '';
+        if(dailyVisceralInput) dailyVisceralInput.value = '';
+        
         checkAndRenderWeightStatus();
 
         renderFoodList();
@@ -1036,11 +1136,18 @@
         alert('今日紀錄已清空！');
     }
 
+    // 🌟 升級與優化：在見證生成長圖卡中，完美秀出每日體重、體脂與內臟脂肪標籤 🌟
     function renderHistoryShareCard() {
         const container = document.getElementById('history-days-container');
         if (!container) return;
 
         const foodRecords = JSON.parse(localStorage.getItem('myFoodRecords')) || [];
+        const bedtimeHistory = JSON.parse(localStorage.getItem('myBedtimeHistory')) || {};
+        const wakeupHistory = JSON.parse(localStorage.getItem('myWakeupHistory')) || {};
+        const dailyFatHistory = JSON.parse(localStorage.getItem('myDailyBodyFatHistory')) || {};
+        const dailyVisceralHistory = JSON.parse(localStorage.getItem('myDailyVisceralHistory')) || {};
+        const p = JSON.parse(localStorage.getItem('myProfileData')) || {};
+
         let dateSet = new Set();
         dateSet.add(todayStr);
         foodRecords.forEach(r => dateSet.add(r.date));
@@ -1055,10 +1162,26 @@
 
         displayDates.forEach(date => {
             const dayFoods = foodRecords.filter(r => r.date === date);
+            
+            // 抓取當天的身體核心數據標籤內容
+            const bw = bedtimeHistory[date] ? `${bedtimeHistory[date]}kg` : '-';
+            const ww = wakeupHistory[date] ? `${wakeupHistory[date]}kg` : '-';
+            const df = dailyFatHistory[date] ? `${dailyFatHistory[date]}%` : (p.bodyFat ? `${p.bodyFat}%` : '-');
+            const dv = dailyVisceralHistory[date] ? `${dailyVisceralHistory[date]}` : (p.visceralFat ? `${p.visceralFat}` : '-');
+
+            // 身體數據小橫條的 HTML 衣服
+            const bodyDataBadgeLine = `
+                <div class="mt-1 d-flex flex-wrap gap-1" style="font-size: 11px;">
+                    <span class="badge bg-light text-dark border">🌙 睡前: ${bw}</span>
+                    <span class="badge bg-light text-dark border">☀️ 起床: ${ww}</span>
+                    <span class="badge bg-light text-success border">🩸 體脂: ${df}</span>
+                    <span class="badge bg-light text-danger border">🫁 內脂: ${dv}</span>
+                </div>
+            `;
 
             if (dayFoods.length > 0) {
                 const sortedDayFoods = [...dayFoods].reverse();
-                sortedDayFoods.forEach(food => {
+                sortedDayFoods.forEach((food, index) => {
                     let previewImgHtml = `<div style="width:60px; height:60px; background:#e2e8f0; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:11px;">無照片</div>`;
                     if (food.photo) previewImgHtml = `<img src="${food.photo}" style="width:60px; height:60px; object-fit:cover; border-radius:10px;">`;
 
@@ -1068,6 +1191,7 @@
                             <div class="flex-grow-1 ms-3">
                                 <div class="fw-bold text-secondary" style="font-size:11px;">📅 日期: ${date} ⏰ 時間: ${food.time}</div>
                                 <div class="text-dark fw-bold" style="font-size: 0.92rem; margin-top:2px;">😋 餐點: ${food.name}</div>
+                                ${index === 0 ? bodyDataBadgeLine : ''} <!-- 每天的第一筆餐點順便渲染數據橫條 -->
                             </div>
                             <div class="text-end d-flex align-items-center g-2">
                                 <span class="badge bg-success font-monospace" style="font-size: 0.82rem; padding: 5px 8px;">${food.kcal} kcal</span>
@@ -1083,6 +1207,7 @@
                         <div class="flex-grow-1 ms-3">
                             <div class="fw-bold text-muted" style="font-size:11px;">📅 ${date}</div>
                             <div class="text-muted small" style="font-size: 11px;">當日尚無餐量進食紀錄</div>
+                            ${bodyDataBadgeLine} <!-- 沒有吃飯紀錄依然顯示今天的身體數據打卡狀態 -->
                         </div>
                         <div class="text-end">
                             <span class="badge bg-light text-secondary border small" style="font-size: 11px;">0 kcal</span>
@@ -1319,10 +1444,18 @@
         });
     }
 
+    // 🌟 修正與優化：複製照片提問詞時，自動帶入我會過敏的食物提醒 🌟
     function askGeminiHelper() {
-        const text = "請幫我計算以下食物的熱量大卡：";
+        const allergyInput = document.getElementById('allergy');
+        const allergyVal = allergyInput ? allergyInput.value.trim() : '';
+        
+        let text = "請幫我計算以下食物的熱量大卡：";
+        if (allergyVal && allergyVal !== "無") {
+            text = `請幫我計算以下食物的熱量大卡。請特別注意：我對「${allergyVal}」過敏，若食物中可能含有相關成分，請務必在回答中顯眼地提醒我！`;
+        }
+
         navigator.clipboard.writeText(text).then(() => {
-            alert("🤖 提示詞已複製成功！即將為您打開新視窗，請貼上提問詞並上傳您的食物照片。");
+            alert(`🤖 貼心提問詞已複製成功！\n\n內容：\n"${text}"\n\n即將為您打開新視窗，請直接貼上提問詞並上傳您的食物照片。`);
             window.open("https://gemini.google.com/", "_blank");
         }).catch(() => {
             alert("複製失敗，請手動輸入提問詞喔！");
