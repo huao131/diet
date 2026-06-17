@@ -16,7 +16,7 @@
             margin: 0;
         }
         
-        /* 💡 全新還原：線上 Sample 版「呼吸感」歡迎大首頁樣式 */
+        /* 歡迎大首頁樣式 */
         #welcome-screen {
             position: fixed;
             top: 0;
@@ -35,11 +35,20 @@
             text-align: center;
             margin-bottom: 40px;
         }
+        
+        /* 💡 修正：設置固定合適的寬高比例，確保官方原始標誌 100% 不變形 */
+        .brand-logo-img {
+            width: 140px;
+            height: 140px;
+            object-fit: contain;
+            margin: 0 auto;
+        }
+        
         .welcome-title {
             color: #1e3a8a;
             font-size: 2rem;
             font-weight: bold;
-            margin-top: 15px;
+            margin-top: 25px;
             letter-spacing: 1px;
         }
         .welcome-subtitle {
@@ -49,7 +58,7 @@
             margin-top: 5px;
         }
         
-        /* 🌟 呼吸感核心動畫開關：讓綠色圓鈕如同呼吸般自然起伏 */
+        /* 圓鈕黃金呼吸動態樣式 */
         .breath-btn {
             width: 160px;
             height: 160px;
@@ -66,7 +75,7 @@
             box-shadow: 0 12px 30px rgba(16, 185, 129, 0.3);
             cursor: pointer;
             transition: all 0.2s ease;
-            animation: pulseBreath 2.5s infinite ease-in-out; /* 啟動呼吸循環 */
+            animation: pulseBreath 2.5s infinite ease-in-out;
         }
         .breath-btn:active {
             transform: scale(0.92);
@@ -79,7 +88,7 @@
             100% { transform: scale(1); box-shadow: 0 12px 30px rgba(16, 185, 129, 0.3); }
         }
 
-        /* 主程式容器排版 */
+        /* 主容器排版 */
         .app-container {
             max-width: 500px;
             margin: 20px auto;
@@ -309,11 +318,7 @@
 
 <div id="welcome-screen">
     <div class="welcome-logo-box">
-        <svg width="80" height="100" viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin: 0 auto;">
-            <path d="M70 20C65 20 58 25 55 35C52 45 60 65 45 80C35 90 25 85 25 95C25 100 45 102 60 95C75 88 72 70 65 55C60 45 75 25 70 20Z" stroke="#8b7355" stroke-width="4" stroke-linecap="round"/>
-            <circle cx="62" cy="40" r="4" fill="#8b7355"/>
-            <line x1="40" y1="105" x2="75" y2="105" stroke="#8b7355" stroke-width="3" stroke-linecap="round"/>
-        </svg>
+        <img class="brand-logo-img" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAMAAAD1fmorAAAAM1BMVEVHcEwAAAAuJiUvJiUvJyUvJyYvJyYvJyYvJyYwJyYwJyYwJycwJycwJycxJycxJycxJycxJycc8F7HAAAADnRSTlMAESIzRFVmd4iZq7u/z9/v6gK0AAAAgUlEQVRo3u3Z2w6AIAwE0FpArID//7KCiYm9m90scXw6STctZ6BSVvOnEwXwH8AH8BvAawBzF6A0WpA9+HwRILV6AEv1ALbeHwZIrR6gNntw66gHqM0erDo9wGv2YNPpAb/Zg19HPaCjegBX78Gvoh7w9uF78B/AG8D82AHLZAGb6fVThQAAAABJRU5ErkJggg==" alt="Logo">
         <div class="welcome-title">我的 AI 享瘦日記</div>
         <div class="welcome-subtitle">📋 IAE國際餐量管理師指導項目</div>
     </div>
@@ -617,7 +622,6 @@
             document.getElementById('targetWeight').value = savedProfile.targetWeight;
             document.getElementById('targetDate').value = savedProfile.targetDate;
 
-            // 💡 修正控制權：如果有快取舊分頁，退出歡迎頁後仍能完美對齊學員最後停留的分頁
             const lastPage = localStorage.getItem('lastActiveTab') || 'diet';
             switchMainPage(lastPage);
         } else {
@@ -631,7 +635,7 @@
         initChart();
     };
 
-    /* 💡 全新功能：點擊綠色圓鈕後的優雅淡出呼吸畫面函數 */
+    /* 💡 修正：點擊綠色圓鈕後的優雅淡出歡迎首頁函數 */
     function exitWelcomeScreen() {
         const screen = document.getElementById('welcome-screen');
         if (screen) {
@@ -639,7 +643,7 @@
             screen.style.transform = 'scale(1.1)';
             setTimeout(() => {
                 screen.style.display = 'none';
-            }, 500); // 配合 0.5s 動態優雅淡出
+            }, 500);
         }
     }
 
@@ -869,7 +873,7 @@
         renderFoodList();
         renderHistoryShareCard();
         initChart();
-    </div>
+    } // 💡 修正：將原本誤植的 </div> 改回正確的大括號 }，完美解鎖全功能點擊！
 
     function addDoubleWeightRecord() {
         const bedtimeInput = document.getElementById('bedtimeWeight');
@@ -1214,7 +1218,7 @@
                 labels: sortedDates,
                 datasets: [
                     {
-                        label: '擺取熱量 (kcal)',
+                        label: '攝取熱量 (kcal)',
                         data: kcalData,
                         borderColor: '#3b82f6',
                         backgroundColor: 'rgba(59, 130, 246, 0.1)',
