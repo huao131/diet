@@ -332,7 +332,7 @@
             <div class="calorie-dashboard">
                 <div class="d-flex justify-content-between mb-2 text-muted small">
                     <span>每日推薦目標: <strong id="target-kcal-text">1500</strong> kcal</span>
-                    <span class="text-secondary text-decoration-none">⚙️ 自動保留中</span>
+                    <span class="text-secondary text-decoration-none">⚙️ 智慧資料庫運作中</span>
                 </div>
                 <div class="circle-progress" id="kcal-circle">
                     <div class="circle-inner">
@@ -498,7 +498,7 @@
 
         <div id="page-profile" class="d-block">
             <div class="privacy-alert p-3 mb-4 text-center">
-                🔒 <strong>安心聲明</strong>：本系統所記錄的所有數據與照片，<strong>完全儲存在您自己的手機本地瀏覽器中</strong>，絕不上傳 any 外部伺服器，不會有任何隱私外洩的風險，請放心體驗！
+                🔒 <strong>安心聲明</strong>：本系統所記錄的所有數據與照片，傳奇升級至 <strong>IndexedDB 500MB+ 巨型本地資料庫</strong>，完全儲存在您自己的手機本地瀏覽器中，絕不上傳 any 外部伺服器，請放心體驗！
             </div>
 
             <div class="section-title">第一步：輸入身體基本數據</div>
@@ -608,84 +608,148 @@
 </div>
 
 <script>
-    // 獲取今天標準格式 MM/DD
     const todayStr = new Date().toLocaleDateString([], {month: '2-digit', day: '2-digit'});
-    // 獲取今天標準格式 YYYY-MM-DD
     const todayIsoStr = new Date().toISOString().split('T')[0];
 
     let trendChart = null;
-    
-    // 小卡片與圖表分頁改為 SessionStorage (刷新時鎖定留在原分頁，關閉後重開則重算)
     let currentRange = sessionStorage.getItem('sessionChartRange') || 'day';     
     let currentCardRange = sessionStorage.getItem('sessionCardRange') || 'day'; 
 
-    // 點擊圓圈開始按鈕後，關閉歡迎幕布的「開關」控制函式
+    // 🚀 INDEXEDDB 核心資料庫初始化 🚀
+    let db = null;
+    const dbName = "DietDietDB";
+    const dbVersion = 1;
+
+    function initIndexedDB(callback) {
+        const request = indexedDB.open(dbName, dbVersion);
+        request.onerror = function(event) {
+            console.error("資料庫啟動失敗", event);
+            if(callback) callback();
+        };
+        request.onsuccess = function(event) {
+            db = event.target.result;
+            console.log("IndexedDB 啟動成功，空間解鎖 500MB+！");
+            if(callback) callback();
+        };
+        request.onupgradeneeded = function(event) {
+            const upgradeDb = event.target.result;
+            if (!upgradeDb.objectStoreNames.contains("foodRecords")) {
+                upgradeDb.createObjectStore("foodRecords", { keyPath: "id" });
+            }
+            if (!upgradeDb.objectStoreNames.contains("healthHistory")) {
+                upgradeDb.createObjectStore("healthHistory", { keyPath: "date" });
+            }
+        };
+    }
+
+    // 資料庫通用開關：寫入與讀取
+    function getHealthHistory(callback) {
+        if (!db) { callback({}); return; }
+        const transaction = db.transaction(["healthHistory"], "readonly");
+        const store = transaction.objectStore("healthHistory");
+        const request = store.getAll();
+        request.onsuccess = function() {
+            let res = {};
+            request.result.forEach(item => {
+                res[item.date] = item;
+            });
+            callback(res);
+        };
+    }
+
+    function saveHealthHistoryItem(date, field, value, callback) {
+        if (!db) return;
+        const transaction = db.transaction(["healthHistory"], "readwrite");
+        const store = transaction.objectStore("healthHistory");
+        const getReq = store.get(date);
+        
+        getReq.onsuccess = function() {
+            let data = getReq.result || { date: date };
+            if(value === null || isNaN(value)) {
+                delete data[field];
+            } else {
+                data[field] = value;
+            }
+            store.put(data);
+            transaction.oncomplete = function() {
+                if(callback) callback();
+            };
+        };
+    }
+
+    function getAllFoodRecords(callback) {
+        if (!db) { callback([]); return; }
+        const transaction = db.transaction(["foodRecords"], "readonly");
+        const store = transaction.objectStore("foodRecords");
+        const request = store.getAll();
+        request.onsuccess = function() {
+            // 按時間倒序排列
+            const records = request.result.sort((a,b) => b.id - a.id);
+            callback(records);
+        };
+    }
+
     function closeSplashScreen() {
         const splash = document.getElementById('splash-screen');
         if (splash) {
-            splash.style.opacity = '0'; // 漸淡隱形
-            setTimeout(() => {
-                splash.style.visibility = 'hidden'; // 完全騰出空間給主畫面
-            }, 600); // 配合 0.6 秒的淡出時間
+            splash.style.opacity = '0';
+            setTimeout(() => { splash.style.visibility = 'hidden'; }, 600);
         }
-        // 核心修正：記錄這一次分頁開啟中已經按過開始，刷新時就不再跳大畫面
         sessionStorage.setItem('sessionSplashClosed', 'true');
     }
 
     window.onload = function() {
-        const tDate = new Date();
-        tDate.setMonth(tDate.getMonth() + 3);
-        document.getElementById('targetDate').value = tDate.toISOString().split('T')[0];
+        initIndexedDB(function() {
+            const tDate = new Date();
+            tDate.setMonth(tDate.getMonth() + 3);
+            document.getElementById('targetDate').value = tDate.toISOString().split('T')[0];
 
-        // 🌟 初始化補 PO 日期選擇器，預設一律為今天 🌟
-        document.getElementById('weightLogDate').value = todayIsoStr;
-        document.getElementById('foodLogDate').value = todayIsoStr;
+            document.getElementById('weightLogDate').value = todayIsoStr;
+            document.getElementById('foodLogDate').value = todayIsoStr;
 
-        const savedProfile = JSON.parse(localStorage.getItem('myProfileData'));
-        
-        // 核心修正：判斷是不是刷新。如果 session 有關閉紀錄且有上次分頁，就留在原地
-        const isSplashClosedThisSession = sessionStorage.getItem('sessionSplashClosed') === 'true';
-        
-        if (savedProfile) {
-            document.getElementById('userName').value = savedProfile.userName || 'mata';
-            document.getElementById('birthYear').value = savedProfile.birthYear;
-            document.getElementById('gender').value = savedProfile.gender;
-            document.getElementById('height').value = savedProfile.height;
-            document.getElementById('weight').value = savedProfile.weight;
+            const savedProfile = JSON.parse(localStorage.getItem('myProfileData'));
+            const isSplashClosedThisSession = sessionStorage.getItem('sessionSplashClosed') === 'true';
             
-            if(savedProfile.bodyFat) document.getElementById('bodyFat').value = savedProfile.bodyFat;
-            if(savedProfile.visceralFat) document.getElementById('visceralFat').value = savedProfile.visceralFat;
-            if(savedProfile.activity) document.getElementById('activity').value = savedProfile.activity;
-            if(savedProfile.realDisease) document.getElementById('realDisease').value = savedProfile.realDisease;
-            
-            document.getElementById('allergy').value = savedProfile.allergy;
-            document.getElementById('targetWeight').value = savedProfile.targetWeight;
-            document.getElementById('targetDate').value = savedProfile.targetDate;
+            if (savedProfile) {
+                document.getElementById('userName').value = savedProfile.userName || 'mata';
+                document.getElementById('birthYear').value = savedProfile.birthYear;
+                document.getElementById('gender').value = savedProfile.gender;
+                document.getElementById('height').value = savedProfile.height;
+                document.getElementById('weight').value = savedProfile.weight;
+                
+                if(savedProfile.bodyFat) document.getElementById('bodyFat').value = savedProfile.bodyFat;
+                if(savedProfile.visceralFat) document.getElementById('visceralFat').value = savedProfile.visceralFat;
+                if(savedProfile.activity) document.getElementById('activity').value = savedProfile.activity;
+                if(savedProfile.realDisease) document.getElementById('realDisease').value = savedProfile.realDisease;
+                
+                document.getElementById('allergy').value = savedProfile.allergy;
+                document.getElementById('targetWeight').value = savedProfile.targetWeight;
+                document.getElementById('targetDate').value = savedProfile.targetDate;
 
-            let targetTab = 'profile';
-            if (isSplashClosedThisSession) {
-                targetTab = sessionStorage.getItem('sessionActiveTab') || 'profile';
-                const splash = document.getElementById('splash-screen');
-                if (splash) splash.style.display = 'none';
+                let targetTab = 'profile';
+                if (isSplashClosedThisSession) {
+                    targetTab = sessionStorage.getItem('sessionActiveTab') || 'profile';
+                    const splash = document.getElementById('splash-screen');
+                    if (splash) splash.style.display = 'none';
+                } else {
+                    sessionStorage.removeItem('sessionActiveTab');
+                    targetTab = 'profile'; 
+                }
+                switchMainPage(targetTab);
             } else {
-                sessionStorage.removeItem('sessionActiveTab');
-                targetTab = 'profile'; 
+                switchMainPage('profile');
+                document.getElementById('main-app-navigation').classList.add('d-none');
             }
-            switchMainPage(targetTab);
-        } else {
-            switchMainPage('profile');
-            document.getElementById('main-app-navigation').classList.add('d-none');
-        }
 
-        updateSmallCardTabsVisual();
-        checkAndResetDailyCircle();
-        renderFoodList();
-        renderHistoryShareCard(); 
-        initChart();
-        checkAndRenderWeightStatus(); 
+            updateSmallCardTabsVisual();
+            checkAndResetDailyCircle();
+            renderFoodList();
+            renderHistoryShareCard(); 
+            initChart();
+            checkAndRenderWeightStatus(); 
+        });
     };
 
-    // 輔助函式：讓三個小卡片刷新時點燈狀態正確
     function updateSmallCardTabsVisual() {
         ['day', 'week', 'month'].forEach(r => {
             const btn = document.getElementById(`btn-chart-${r}`);
@@ -702,7 +766,6 @@
         if(activeCardBtn) activeCardBtn.classList.add('active');
     }
 
-    // 🌟 轉換日期輸入框的格式(YYYY-MM-DD)為系統儲存格式(MM/DD) 🌟
     function getTargetMmDdStr(inputId) {
         const dateInput = document.getElementById(inputId);
         if(!dateInput || !dateInput.value) return todayStr;
@@ -711,64 +774,63 @@
         return `${parts[1]}/${parts[2]}`;
     }
 
-    // 🌟 智慧檢查「選定日期」輸入過了沒，並渲染畫面提示 🌟
     function checkAndRenderWeightStatus() {
         const targetMmDd = getTargetMmDdStr('weightLogDate');
         
-        const bedtimeHistory = JSON.parse(localStorage.getItem('myBedtimeHistory')) || {};
-        const wakeupHistory = JSON.parse(localStorage.getItem('myWakeupHistory')) || {};
-        const dailyFatHistory = JSON.parse(localStorage.getItem('myDailyBodyFatHistory')) || {};
-        const dailyVisceralHistory = JSON.parse(localStorage.getItem('myDailyVisceralHistory')) || {};
-        
-        const bWeight = bedtimeHistory[targetMmDd];
-        const wWeight = wakeupHistory[targetMmDd];
-        const dFat = dailyFatHistory[targetMmDd];
-        const dVisceral = dailyVisceralHistory[targetMmDd];
-        
-        const badge = document.getElementById('weight-status-badge');
-        const syncBtn = document.getElementById('sync-weight-btn');
-        const bedtimeInput = document.getElementById('bedtimeWeight');
-        const wakeupInput = document.getElementById('wakeupWeight');
-        const dailyFatInput = document.getElementById('dailyBodyFat');
-        const dailyVisceralInput = document.getElementById('dailyVisceralFat');
-        
-        if (!badge) return;
-        
-        // 如果該選定日期有任何一項輸入成功，代表該日已存檔
-        if (bWeight !== undefined || wWeight !== undefined || dFat !== undefined || dVisceral !== undefined) {
-            badge.innerText = `${targetMmDd} 已存檔 ✅`;
-            badge.className = "badge bg-success text-white fw-bold";
-            syncBtn.innerText = `重新更新 ${targetMmDd} 核心數據 🔄`;
+        getHealthHistory(function(history) {
+            const dayData = history[targetMmDd] || {};
+            const bWeight = dayData.bedtime;
+            const wWeight = dayData.wakeup;
+            const dFat = dayData.fat;
+            const dVisceral = dayData.visceral;
             
-            // 將已存檔數據填回，方便補打卡時查看
-            bedtimeInput.value = bWeight !== undefined ? bWeight : '';
-            wakeupInput.value = wWeight !== undefined ? wWeight : '';
-            dailyFatInput.value = dFat !== undefined ? dFat : '';
-            dailyVisceralInput.value = dVisceral !== undefined ? dVisceral : '';
-        } else {
-            badge.innerText = `⚠️ ${targetMmDd} 尚未存檔`;
-            badge.className = "badge bg-warning text-dark fw-bold";
-            syncBtn.innerText = `同步記錄 ${targetMmDd} 核心數據`;
+            const badge = document.getElementById('weight-status-badge');
+            const syncBtn = document.getElementById('sync-weight-btn');
+            const bedtimeInput = document.getElementById('bedtimeWeight');
+            const wakeupInput = document.getElementById('wakeupWeight');
+            const dailyFatInput = document.getElementById('dailyBodyFat');
+            const dailyVisceralInput = document.getElementById('dailyVisceralFat');
             
-            // 清空輸入框等待全新填寫
-            bedtimeInput.value = '';
-            wakeupInput.value = '';
-            dailyFatInput.value = '';
-            dailyVisceralInput.value = '';
-        }
+            if (!badge) return;
+            
+            if (bWeight !== undefined || wWeight !== undefined || dFat !== undefined || dVisceral !== undefined) {
+                badge.innerText = `${targetMmDd} 已存檔 ✅`;
+                badge.className = "badge bg-success text-white fw-bold";
+                syncBtn.innerText = `重新更新 ${targetMmDd} 核心數據 🔄`;
+                
+                bedtimeInput.value = bWeight !== undefined ? bWeight : '';
+                wakeupInput.value = wWeight !== undefined ? wWeight : '';
+                dailyFatInput.value = dFat !== undefined ? dFat : '';
+                dailyVisceralInput.value = dVisceral !== undefined ? dVisceral : '';
+            } else {
+                badge.innerText = `⚠️ ${targetMmDd} 尚未存檔`;
+                badge.className = "badge bg-warning text-dark fw-bold";
+                syncBtn.innerText = `同步記錄 ${targetMmDd} 核心數據`;
+                
+                bedtimeInput.value = '';
+                wakeupInput.value = '';
+                dailyFatInput.value = '';
+                dailyVisceralInput.value = '';
+            }
+        });
     }
 
     function factoryResetAllData() {
-        const msg1 = "⚠️ 您即將啟動餐量管理資訊重置。\n這將會徹底抹除您這台手機平台上記錄的所有飲食日記、照片、體重、體脂、內臟脂肪以及個人數據。\n\n";
-        const msg2 = "💡 資訊重置不會影響手機其他所有APP的資訊。\n\n";
-        const msg3 = "確定要清空個人數據重新開始嗎？";
-        
-        if (!confirm(msg1 + msg2 + msg3)) return;
+        if (!confirm("⚠️ 您即將啟動餐量管理資訊重置。\n這將會徹底抹除您這台手機上記錄的所有飲食日記、照片、體重、體脂以及內臟脂肪。\n確定要清空嗎？")) return;
         
         localStorage.clear();
         sessionStorage.clear();
-        alert('✨ 餐量管理數據已安全清空！網頁將自動重置載入。');
-        window.location.reload();
+        
+        if (db) {
+            db.close();
+            const deleteRequest = indexedDB.deleteDatabase(dbName);
+            deleteRequest.onsuccess = function () {
+                alert('✨ 資料庫與餐量數據已完全清空重置！網頁將自動重新載入。');
+                window.location.reload();
+            };
+        } else {
+            window.location.reload();
+        }
     }
 
     function switchMainPage(pageName) {
@@ -779,7 +841,6 @@
         document.getElementById('tab-diet').classList.remove('active');
         document.getElementById('tab-reports').classList.remove('active');
         document.getElementById('tab-profile').classList.remove('active');
-
         document.getElementById('main-app-navigation').classList.remove('d-none');
 
         if (pageName === 'diet') {
@@ -797,7 +858,6 @@
         }
 
         sessionStorage.setItem('sessionActiveTab', pageName);
-
         const nameVal = document.getElementById('userName').value.trim() || 'mata';
         document.getElementById('main-app-title').innerText = `${nameVal} 的 AI 享瘦日記`;
         document.getElementById('share-tag-name').innerText = nameVal ? `${nameVal}專屬` : '日光國際';
@@ -852,7 +912,6 @@
             backgroundColor: '#ffffff'
         }).then(canvas => {
             buttons.forEach(btn => btn.style.display = 'block');
-
             const imageType = 'image/png';
             const imageData = canvas.toDataURL(imageType);
             const downloadLink = document.createElement('a');
@@ -860,7 +919,6 @@
             const nameInput = document.getElementById('userName').value.trim() || '日光國際';
             downloadLink.download = `${nameInput}_餐量管理成果報告_${todayStr.replace('/','-')}.png`;
             downloadLink.href = imageData;
-            downloadLink.dataset.downloadurl = [imageType, downloadLink.download, downloadLink.href].join(':');
             
             document.body.appendChild(downloadLink);
             downloadLink.click();
@@ -873,72 +931,60 @@
 
     function exportDataToExcel() {
         const p = JSON.parse(localStorage.getItem('myProfileData')) || {};
-        const foodRecords = JSON.parse(localStorage.getItem('myFoodRecords')) || [];
-        const bedtimeHistory = JSON.parse(localStorage.getItem('myBedtimeHistory')) || {};
-        const wakeupHistory = JSON.parse(localStorage.getItem('myWakeupHistory')) || {};
-        const dailyFatHistory = JSON.parse(localStorage.getItem('myDailyBodyFatHistory')) || {};
-        const dailyVisceralHistory = JSON.parse(localStorage.getItem('myDailyVisceralHistory')) || {};
+        
+        getAllFoodRecords(function(foodRecords) {
+            getHealthHistory(function(healthHistory) {
+                if (foodRecords.length === 0 && Object.keys(healthHistory).length === 0) {
+                    alert('目前系統中還沒有任何餐量數據可導出喔！');
+                    return;
+                }
 
-        if (foodRecords.length === 0 && Object.keys(bedtimeHistory).length === 0 && Object.keys(wakeupHistory).length === 0) {
-            alert('目前手機中還沒有任何餐量數據可導出喔！');
-            return;
-        }
+                let csvContent = "\uFEFF"; 
+                csvContent += "暱稱,日期,前日睡前體重(kg),今日起床體重(kg),今日動態體脂率(%),今日動態內臟脂肪等級\n";
 
-        let csvContent = "\uFEFF"; 
-        csvContent += "暱稱,日期,前日睡前體重(kg),今日起床體重(kg),今日動態體脂率(%),今日動態內臟脂肪等級\n";
+                let dateSet = new Set();
+                foodRecords.forEach(r => dateSet.add(r.date));
+                Object.keys(healthHistory).forEach(d => dateSet.add(d));
+                let allSortedDates = Array.from(dateSet).sort();
 
-        let dateSet = new Set();
-        foodRecords.forEach(r => dateSet.add(r.date));
-        Object.keys(bedtimeHistory).forEach(d => dateSet.add(d));
-        Object.keys(wakeupHistory).forEach(d => dateSet.add(d));
-        Object.keys(dailyFatHistory).forEach(d => dateSet.add(d));
-        Object.keys(dailyVisceralHistory).forEach(d => dateSet.add(d));
-        let allSortedDates = Array.from(dateSet).sort();
+                const nickName = p.userName || "未填";
 
-        const nickName = p.userName || "未填";
+                allSortedDates.forEach(date => {
+                    const dayData = healthHistory[date] || {};
+                    const bWeight = dayData.bedtime || "-";
+                    const wWeight = dayData.wakeup || "-";
+                    const dFat = dayData.fat || p.bodyFat || "-";
+                    const dVisc = dayData.visceral || p.visceralFat || "-";
+                    
+                    csvContent += `${nickName},${date},${bWeight},${wWeight},${dFat},${dVisc}\n`;
+                });
 
-        allSortedDates.forEach(date => {
-            const bWeight = bedtimeHistory[date] || "-";
-            const wWeight = wakeupHistory[date] || "-";
-            const dFat = dailyFatHistory[date] || p.bodyFat || "-";
-            const dVisc = dailyVisceralHistory[date] || p.visceralFat || "-";
-            
-            csvContent += `${nickName},${date},${bWeight},${wWeight},${dFat},${dVisc}\n`;
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement("a");
+                const url = URL.createObjectURL(blob);
+                
+                link.setAttribute("href", url);
+                link.setAttribute("download", `${nickName}_日光國際大數據管理表_${todayStr.replace('/','-')}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                alert('📊 大數據資料庫打包 csv 下載成功！');
+            });
         });
-
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement("a");
-        const url = URL.createObjectURL(blob);
-        
-        link.setAttribute("href", url);
-        link.setAttribute("download", `${nickName}_日光國際核心健康大數據管理表_${todayStr.replace('/','-')}.csv`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        alert('📊 日光國際核心大數據 Excel 表格已成功打包下載！');
     }
 
     function switchCardRange(range) {
         currentCardRange = range;
         sessionStorage.setItem('sessionCardRange', range); 
-        
-        document.getElementById('btn-card-day').classList.remove('active');
-        document.getElementById('btn-card-week').classList.remove('active');
-        document.getElementById('btn-card-month').classList.remove('active');
-        document.getElementById(`btn-card-${range}`).classList.add('active');
+        updateSmallCardTabsVisual();
         renderHistoryShareCard();
     }
 
     function switchChartRange(range) {
         currentRange = range;
         sessionStorage.setItem('sessionChartRange', range); 
-        
-        document.getElementById('btn-chart-day').classList.remove('active');
-        document.getElementById('btn-chart-week').classList.remove('active');
-        document.getElementById('btn-chart-month').classList.remove('active');
-        document.getElementById(`btn-chart-${range}`).classList.add('active');
+        updateSmallCardTabsVisual();
         initChart();
     }
 
@@ -961,74 +1007,49 @@
             return;
         }
 
-        const oldProfile = JSON.parse(localStorage.getItem('myProfileData'));
-        if (oldProfile && oldProfile.userName !== userName) {
-            const confirmClear = confirm(`👋 偵測到使用者已從「${oldProfile.userName}」切換為「${userName}」！\n\n是否一併清空前一位使用者的飲食與體重紀錄，為新使用者建立乾淨的新看板？`);
-            if (confirmClear) {
-                localStorage.removeItem('myFoodRecords');
-                localStorage.removeItem('myBedtimeHistory');
-                localStorage.removeItem('myWakeupHistory');
-                localStorage.removeItem('myDailyBodyFatHistory');
-                localStorage.removeItem('myDailyVisceralHistory');
-            }
-        }
-
         const profileData = {
             userName, birthYear, gender, height, weight, bodyFat, visceralFat, activity, realDisease, allergy, targetWeight, targetDate
         };
         localStorage.setItem('myProfileData', JSON.stringify(profileData));
 
         switchMainPage('diet');
-        
-        renderFoodList();
-        renderHistoryShareCard();
-        initChart();
     }
 
-    // 同步保存「選定日期」的雙體重、每日體脂、每日內臟脂肪 (自由補 PO 支援)
     function addDoubleWeightRecord() {
         const targetMmDd = getTargetMmDdStr('weightLogDate');
 
-        const bedtimeInput = document.getElementById('bedtimeWeight');
-        const wakeupInput = document.getElementById('wakeupWeight');
-        const dailyFatInput = document.getElementById('dailyBodyFat');
-        const dailyVisceralInput = document.getElementById('dailyVisceralFat');
-        
-        const bedtimeVal = parseFloat(bedtimeInput.value);
-        const wakeupVal = parseFloat(wakeupInput.value);
-        const dailyFatVal = parseFloat(dailyFatInput.value);
-        const dailyVisceralVal = parseFloat(dailyVisceralInput.value);
+        const bVal = parseFloat(document.getElementById('bedtimeWeight').value);
+        const wVal = parseFloat(document.getElementById('wakeupWeight').value);
+        const fVal = parseFloat(document.getElementById('dailyBodyFat').value);
+        const vVal = parseFloat(document.getElementById('dailyVisceralFat').value);
 
-        if (isNaN(bedtimeVal) && isNaN(wakeupVal) && isNaN(dailyFatVal) && isNaN(dailyVisceralVal)) {
+        if (isNaN(bVal) && isNaN(wVal) && isNaN(fVal) && isNaN(vVal)) {
             alert('請至少填寫一項數據再進行保存喔！');
             return;
         }
 
-        let bedtimeHistory = JSON.parse(localStorage.getItem('myBedtimeHistory')) || {};
-        let wakeupHistory = JSON.parse(localStorage.getItem('myWakeupHistory')) || {};
-        let dailyFatHistory = JSON.parse(localStorage.getItem('myDailyBodyFatHistory')) || {};
-        let dailyVisceralHistory = JSON.parse(localStorage.getItem('myDailyVisceralHistory')) || {};
-
-        // 如果輸入框有數值就寫入，若清空則刪除該欄位
-        if (!isNaN(bedtimeVal)) bedtimeHistory[targetMmDd] = bedtimeVal; else delete bedtimeHistory[targetMmDd];
-        if (!isNaN(wakeupVal)) wakeupHistory[targetMmDd] = wakeupVal; else delete wakeupHistory[targetMmDd];
-        if (!isNaN(dailyFatVal)) dailyFatHistory[targetMmDd] = dailyFatVal; else delete dailyFatHistory[targetMmDd];
-        if (!isNaN(dailyVisceralVal)) dailyVisceralHistory[targetMmDd] = dailyVisceralVal; else delete dailyVisceralHistory[targetMmDd];
-
-        localStorage.setItem('myBedtimeHistory', JSON.stringify(bedtimeHistory));
-        localStorage.setItem('myWakeupHistory', JSON.stringify(wakeupHistory));
-        localStorage.setItem('myDailyBodyFatHistory', JSON.stringify(dailyFatHistory));
-        localStorage.setItem('myDailyVisceralHistory', JSON.stringify(dailyVisceralHistory));
-
-        alert(`${targetMmDd} 數據已存檔 ✅`);
+        if (!db) return;
+        const transaction = db.transaction(["healthHistory"], "readwrite");
+        const store = transaction.objectStore("healthHistory");
         
-        checkAndRenderWeightStatus();
-        initChart(); 
-        renderHistoryShareCard(); 
-        renderFoodList(); // 重新同步頂部儀表板
+        store.get(targetMmDd).onsuccess = function(e) {
+            let data = e.target.result || { date: targetMmDd };
+            if (!isNaN(bVal)) data.bedtime = bVal; else delete data.bedtime;
+            if (!isNaN(wVal)) data.wakeup = wVal; else delete data.wakeup;
+            if (!isNaN(fVal)) data.fat = fVal; else delete data.fat;
+            if (!isNaN(vVal)) data.visceral = vVal; else delete data.visceral;
+            
+            store.put(data);
+            transaction.oncomplete = function() {
+                alert(`${targetMmDd} 核心健康數據已存入資料庫 ✅`);
+                checkAndRenderWeightStatus();
+                initChart(); 
+                renderHistoryShareCard(); 
+                renderFoodList();
+            };
+        };
     }
 
-    // 🌟 核心開關修復：處理有照片與沒照片的日記儲存邏輯 🌟
     function addFoodRecord() {
         const name = document.getElementById('foodName').value;
         const kcal = document.getElementById('foodKcal').value;
@@ -1039,165 +1060,149 @@
             return;
         }
 
-        // 智慧型分支判斷
         if (photoInput.files && photoInput.files[0]) {
-            // 情況一：使用者有選取照片，啟動讀取器
             const file = photoInput.files[0];
             const reader = new FileReader();
-            
             reader.onload = function(e) {
                 const photoResult = e.target.result;
-                // 如果照片大於 3.5MB 啟動畫質縮圖壓縮防呆
-                if (photoResult.length > 3500000) { 
+                // 大圖稍微縮圖優化
+                if (photoResult.length > 3000000) { 
                     const img = new Image();
                     img.onload = function() {
                         const canvas = document.createElement('canvas');
                         const ctx = canvas.getContext('2d');
-                        canvas.width = 320;
-                        canvas.height = (img.height / img.width) * 320;
+                        canvas.width = 400; // 提升高畫質寬度
+                        canvas.height = (img.height / img.width) * 400;
                         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                        saveToLocalStorage(name, kcal, canvas.toDataURL('image/jpeg', 0.6));
+                        saveFoodToDB(name, kcal, canvas.toDataURL('image/jpeg', 0.8));
                     };
                     img.src = photoResult;
                 } else {
-                    // 一般一般尺寸照片直接存檔
-                    saveToLocalStorage(name, kcal, photoResult);
+                    saveFoodToDB(name, kcal, photoResult);
                 }
             };
-            reader.onerror = function() { saveToLocalStorage(name, kcal, ''); };
             reader.readAsDataURL(file);
         } else {
-            // ✨ 情況二：使用者沒有選照片（純文字日記），繞過讀取器直接執行存檔！
-            saveToLocalStorage(name, kcal, '');
+            saveFoodToDB(name, kcal, '');
         }
     }
 
-    // 寫入時改為抓取指定「補 PO 日期」 
-    function saveToLocalStorage(name, kcal, photoUrl) {
+    function saveFoodToDB(name, kcal, photoUrl) {
         const targetMmDd = getTargetMmDdStr('foodLogDate');
-        
-        let currentRecords = JSON.parse(localStorage.getItem('myFoodRecords')) || [];
+        if (!db) return;
+
         const newRecord = {
             id: Date.now() + Math.floor(Math.random() * 1000), 
-            date: targetMmDd, // 穿越儲存到指定日期
+            date: targetMmDd,
             name: name,
             kcal: parseInt(kcal),
             photo: photoUrl,
             time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
         };
 
-        currentRecords.unshift(newRecord);
-        localStorage.setItem('myFoodRecords', JSON.stringify(currentRecords));
+        const transaction = db.transaction(["foodRecords"], "readwrite");
+        transaction.objectStore("foodRecords").add(newRecord);
+        transaction.oncomplete = function() {
+            renderFoodList();
+            renderHistoryShareCard(); 
+            initChart(); 
 
-        renderFoodList();
-        renderHistoryShareCard(); 
-        initChart(); 
-
-        document.getElementById('foodName').value = '';
-        document.getElementById('foodKcal').value = '';
-        document.getElementById('foodPhoto').value = '';
-        
-        alert(`成功加入 ${targetMmDd} 的飲食日記！`);
+            document.getElementById('foodName').value = '';
+            document.getElementById('foodKcal').value = '';
+            document.getElementById('foodPhoto').value = '';
+            alert(`成功加入 ${targetMmDd} 的安全日記！`);
+        };
     }
 
     function deleteSingleFoodRecord(recordId) {
         if (!confirm('確定要刪除這一餐的紀錄嗎？')) return;
+        if (!db) return;
 
-        let currentRecords = JSON.parse(localStorage.getItem('myFoodRecords')) || [];
-        currentRecords = currentRecords.filter(item => item.id !== recordId);
-        localStorage.setItem('myFoodRecords', JSON.stringify(currentRecords));
-
-        renderFoodList();
-        renderHistoryShareCard();
-        initChart();
+        const transaction = db.transaction(["foodRecords"], "readwrite");
+        transaction.objectStore("foodRecords").delete(recordId);
+        transaction.oncomplete = function() {
+            renderFoodList();
+            renderHistoryShareCard();
+            initChart();
+        };
     }
 
-    // 清空時一併清空「指定日期」的所有相關紀錄
     function clearTodayRecords() {
         const targetMmDd = getTargetMmDdStr('foodLogDate');
-        if (!confirm(`⚠️ 確定要清除「${targetMmDd}」的所有飲食與核心打卡紀錄嗎？此動作無法復原喔！`)) return;
-        
-        let currentRecords = JSON.parse(localStorage.getItem('myFoodRecords')) || [];
-        currentRecords = currentRecords.filter(item => item.date !== targetMmDd);
-        localStorage.setItem('myFoodRecords', JSON.stringify(currentRecords));
+        if (!confirm(`⚠️ 確定要清除「${targetMmDd}」的所有飲食與核心打卡紀錄嗎？`)) return;
 
-        let bedtimeHistory = JSON.parse(localStorage.getItem('myBedtimeHistory')) || {};
-        let wakeupHistory = JSON.parse(localStorage.getItem('myWakeupHistory')) || {};
-        let dailyFatHistory = JSON.parse(localStorage.getItem('myDailyBodyFatHistory')) || {};
-        let dailyVisceralHistory = JSON.parse(localStorage.getItem('myDailyVisceralHistory')) || {};
+        if (!db) return;
+        const tx = db.transaction(["foodRecords", "healthHistory"], "readwrite");
         
-        delete bedtimeHistory[targetMmDd];
-        delete wakeupHistory[targetMmDd];
-        delete dailyFatHistory[targetMmDd];
-        delete dailyVisceralHistory[targetMmDd];
-        
-        localStorage.setItem('myBedtimeHistory', JSON.stringify(bedtimeHistory));
-        localStorage.setItem('myWakeupHistory', JSON.stringify(wakeupHistory));
-        localStorage.setItem('myDailyBodyFatHistory', JSON.stringify(dailyFatHistory));
-        localStorage.setItem('myDailyVisceralHistory', JSON.stringify(dailyVisceralHistory));
+        // 刪除食物
+        const foodStore = tx.objectStore("foodRecords");
+        foodStore.getAll().onsuccess = function(e) {
+            const list = e.target.result;
+            list.forEach(item => {
+                if(item.date === targetMmDd) foodStore.delete(item.id);
+            });
+        };
 
-        // 如果目前打卡區剛好也是選該日期，同步清空輸入框面
-        if(getTargetMmDdStr('weightLogDate') === targetMmDd) {
-            document.getElementById('bedtimeWeight').value = '';
-            document.getElementById('wakeupWeight').value = '';
-            document.getElementById('dailyBodyFat').value = '';
-            document.getElementById('dailyVisceralFat').value = '';
-        }
-        
-        checkAndRenderWeightStatus();
-        renderFoodList();
-        renderHistoryShareCard();
-        initChart();
-        alert(`${targetMmDd} 紀錄已清空！`);
+        // 刪除體重
+        tx.objectStore("healthHistory").delete(targetMmDd);
+
+        tx.oncomplete = function() {
+            if(getTargetMmDdStr('weightLogDate') === targetMmDd) {
+                document.getElementById('bedtimeWeight').value = '';
+                document.getElementById('wakeupWeight').value = '';
+                document.getElementById('dailyBodyFat').value = '';
+                document.getElementById('dailyVisceralFat').value = '';
+            }
+            checkAndRenderWeightStatus();
+            renderFoodList();
+            renderHistoryShareCard();
+            initChart();
+            alert(`${targetMmDd} 歷史數據已安全擦除！`);
+        };
     }
 
-    // 看板標題隨選擇日期自動切換，並精準計算當日總熱量進度條
     function renderFoodList() {
         const targetMmDd = getTargetMmDdStr('foodLogDate');
-        
-        // 動態修改打卡標題，讓學員知道現在看的是哪一天的清單
         const listTitle = document.getElementById('food-list-title');
         if(listTitle) listTitle.innerText = `${targetMmDd} 已吃食物`;
 
         const container = document.getElementById('food-list-container');
         if (!container) return;
-        
-        const records = JSON.parse(localStorage.getItem('myFoodRecords')) || [];
-        const dayRecords = records.filter(item => item.date === targetMmDd);
 
-        if (dayRecords.length === 0) {
-            container.innerHTML = `<p class="text-muted text-center py-3">該日期還沒有紀錄 any 食物喔！</p>`;
-            const calculatedTarget = calculateUserTargetKcal();
-            updateCalorieDashboard(0, calculatedTarget);
-            return;
-        }
+        getAllFoodRecords(function(records) {
+            const dayRecords = records.filter(item => item.date === targetMmDd);
+            if (dayRecords.length === 0) {
+                container.innerHTML = `<p class="text-muted text-center py-3">該日期還沒有紀錄 any 食物喔！</p>`;
+                updateCalorieDashboard(0, calculateUserTargetKcal());
+                return;
+            }
 
-        let htmlContent = '';
-        let totalKcal = 0;
+            let htmlContent = '';
+            let totalKcal = 0;
 
-        dayRecords.forEach(item => {
-            totalKcal += parseInt(item.kcal);
-            let imgHtml = `<div style="width:80px; height:80px; background:#e2e8f0; border-radius:12px; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:12px;">無照片</div>`;
-            if (item.photo) imgHtml = `<img src="${item.photo}" class="food-img">`;
+            dayRecords.forEach(item => {
+                totalKcal += parseInt(item.kcal);
+                let imgHtml = `<div style="width:80px; height:80px; background:#e2e8f0; border-radius:12px; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:12px;">無照片</div>`;
+                if (item.photo) imgHtml = `<img src="${item.photo}" class="food-img">`;
 
-            htmlContent += `
-                <div class="food-item">
-                    ${imgHtml}
-                    <div class="flex-grow-1 ms-3">
-                        <div class="fw-bold text-dark">${item.name}</div>
-                        <div class="text-muted small">時間：${item.time}</div>
+                htmlContent += `
+                    <div class="food-item">
+                        ${imgHtml}
+                        <div class="flex-grow-1 ms-3">
+                            <div class="fw-bold text-dark">${item.name}</div>
+                            <div class="text-muted small">時間：${item.time}</div>
+                        </div>
+                        <div class="text-end d-flex align-items-center g-2">
+                            <span class="badge bg-primary fs-6 me-2">${item.kcal} kcal</span>
+                            <button class="btn btn-sm btn-outline-danger" style="padding:2px 6px; font-size:12px; border-radius:6px;" onclick="deleteSingleFoodRecord(${item.id})">❌</button>
+                        </div>
                     </div>
-                    <div class="text-end d-flex align-items-center g-2">
-                        <span class="badge bg-primary fs-6 me-2">${item.kcal} kcal</span>
-                        <button class="btn btn-sm btn-outline-danger" style="padding:2px 6px; font-size:12px; border-radius:6px;" onclick="deleteSingleFoodRecord(${item.id})">❌</button>
-                    </div>
-                </div>
-            `;
+                `;
+            });
+
+            container.innerHTML = htmlContent;
+            updateCalorieDashboard(totalKcal, calculateUserTargetKcal());
         });
-
-        container.innerHTML = htmlContent;
-        const calculatedTarget = calculateUserTargetKcal();
-        updateCalorieDashboard(totalKcal, calculatedTarget);
     }
 
     function updateCalorieDashboard(totalConsumed = 0, targetKcal = 1500) {
@@ -1214,7 +1219,6 @@
         if (!circleCenterKcal || !remainingBottom || !statusElement || !circleElement) return;
 
         circleCenterKcal.innerText = totalConsumed;
-
         let percentage = (totalConsumed / targetKcal) * 360;
         if (percentage > 360) percentage = 360;
 
@@ -1250,135 +1254,121 @@
         const canvas = document.getElementById('trendChart');
         if (!canvas) return;
 
-        const ctx = canvas.getContext('2d');
-        const foodRecords = JSON.parse(localStorage.getItem('myFoodRecords')) || [];
-        const bedtimeHistory = JSON.parse(localStorage.getItem('myBedtimeHistory')) || {};
-        const wakeupHistory = JSON.parse(localStorage.getItem('myWakeupHistory')) || {};
+        getAllFoodRecords(function(foodRecords) {
+            getHealthHistory(function(healthHistory) {
+                const ctx = canvas.getContext('2d');
+                let dateSet = new Set();
+                dateSet.add(todayStr);
+                foodRecords.forEach(r => { if(r.date) dateSet.add(r.date); });
+                Object.keys(healthHistory).forEach(d => dateSet.add(d));
+                let sortedDates = Array.from(dateSet).sort();
 
-        let dateSet = new Set();
-        dateSet.add(todayStr);
-        foodRecords.forEach(r => { if(r.date) dateSet.add(r.date); });
-        Object.keys(bedtimeHistory).forEach(d => dateSet.add(d));
-        Object.keys(wakeupHistory).forEach(d => dateSet.add(d));
-        let sortedDates = Array.from(dateSet).sort();
+                if (currentRange === 'day') {
+                    sortedDates = [getTargetMmDdStr('foodLogDate')];
+                } else if (currentRange === 'week') {
+                    sortedDates = sortedDates.slice(-7);
+                } else if (currentRange === 'month') {
+                    sortedDates = sortedDates.slice(-30);
+                }
 
-        if (currentRange === 'day') {
-            sortedDates = [getTargetMmDdStr('foodLogDate')]; // 讓日圖表連動目前選取的日記日期
-        } else if (currentRange === 'week') {
-            sortedDates = sortedDates.slice(-7);
-        } else if (currentRange === 'month') {
-            sortedDates = sortedDates.slice(-30);
-        }
+                let kcalData = [];
+                let bedtimeData = [];
+                let wakeupData = [];
+                let allWeightsInputted = []; 
 
-        let kcalData = [];
-        let bedtimeData = [];
-        let wakeupData = [];
-        let allWeightsInputted = []; 
+                sortedDates.forEach(d => {
+                    const dayFoods = foodRecords.filter(r => r.date === d);
+                    const totalKcal = dayFoods.reduce((sum, item) => sum + parseInt(item.kcal || 0), 0);
+                    kcalData.push(totalKcal);
 
-        sortedDates.forEach(d => {
-            const dayFoods = foodRecords.filter(r => r.date === d);
-            const totalKcal = dayFoods.reduce((sum, item) => sum + parseInt(item.kcal || 0), 0);
-            kcalData.push(totalKcal);
+                    const dayData = healthHistory[d] || {};
+                    const bW = dayData.bedtime !== undefined ? parseFloat(dayData.bedtime) : null;
+                    const wW = dayData.wakeup !== undefined ? parseFloat(dayData.wakeup) : null;
 
-            const bW = bedtimeHistory[d] !== undefined ? parseFloat(bedtimeHistory[d]) : null;
-            const wW = wakeupHistory[d] !== undefined ? parseFloat(wakeupHistory[d]) : null;
+                    bedtimeData.push(bW);
+                    wakeupData.push(wW);
 
-            bedtimeData.push(bW);
-            wakeupData.push(wW);
+                    if(bW) allWeightsInputted.push(bW);
+                    if(wW) allWeightsInputted.push(wW);
+                });
 
-            if(bW) allWeightsInputted.push(bW);
-            if(wW) allWeightsInputted.push(wW);
-        });
+                let finalMinWeight = 40;
+                let finalMaxWeight = 100;
+                if (allWeightsInputted.length > 0) {
+                    const minInArr = Math.min(...allWeightsInputted);
+                    const maxInArr = Math.max(...allWeightsInputted);
+                    finalMinWeight = Math.floor(minInArr - 1.5);
+                    finalMaxWeight = Math.ceil(maxInArr + 1.5);
+                }
 
-        let finalMinWeight = 40;
-        let finalMaxWeight = 100;
-        if (allWeightsInputted.length > 0) {
-            const minInArr = Math.min(...allWeightsInputted);
-            const maxInArr = Math.max(...allWeightsInputted);
-            finalMinWeight = Math.floor(minInArr - 1.5);
-            finalMaxWeight = Math.ceil(maxInArr + 1.5);
-        }
+                if (trendChart) trendChart.destroy();
 
-        if (trendChart) trendChart.destroy();
-
-        trendChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: sortedDates,
-                datasets: [
-                    {
-                        label: '攝取熱量 (kcal)',
-                        data: kcalData,
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        yAxisID: 'yKcal',
-                        tension: 0.3,
-                        borderWidth: 3
+                trendChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: sortedDates,
+                        datasets: [
+                            {
+                                label: '攝取熱量 (kcal)',
+                                data: kcalData,
+                                borderColor: '#3b82f6',
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                yAxisID: 'yKcal',
+                                tension: 0.3,
+                                borderWidth: 3
+                            },
+                            {
+                                label: '睡前體重 (kg)',
+                                data: bedtimeData,
+                                borderColor: '#9333ea',
+                                backgroundColor: 'transparent',
+                                yAxisID: 'yWeight',
+                                tension: 0.2,
+                                borderDash: [5, 5],
+                                spanGaps: true
+                            },
+                            {
+                                label: '起床體重 (kg)',
+                                data: wakeupData,
+                                borderColor: '#10b981',
+                                backgroundColor: 'transparent',
+                                yAxisID: 'yWeight',
+                                tension: 0.2,
+                                spanGaps: true
+                            }
+                        ]
                     },
-                    {
-                        label: '睡前體重 (kg)',
-                        data: bedtimeData,
-                        borderColor: '#9333ea',
-                        backgroundColor: 'transparent',
-                        yAxisID: 'yWeight',
-                        tension: 0.2,
-                        borderDash: [5, 5],
-                        spanGaps: true
-                    },
-                    {
-                        label: '起床體重 (kg)',
-                        data: wakeupData,
-                        borderColor: '#10b981',
-                        backgroundColor: 'transparent',
-                        yAxisID: 'yWeight',
-                        tension: 0.2,
-                        spanGaps: true
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    tooltip: {
-                        enabled: true,
-                        mode: 'index',
-                        intersect: false,
-                        padding: 10,
-                        backgroundColor: 'rgba(30, 58, 138, 0.95)',
-                        titleFont: { size: 13, weight: 'bold' },
-                        bodyFont: { size: 12 },
-                        borderRadius: 8,
-                        callbacks: {
-                            label: function(context) {
-                                let label = context.dataset.label || '';
-                                if (label) {
-                                    label += ': ';
-                                }
-                                if (context.parsed.y !== null) {
-                                    label += context.parsed.y;
-                                }
-                                return label;
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            tooltip: {
+                                enabled: true,
+                                mode: 'index',
+                                intersect: false,
+                                padding: 10,
+                                backgroundColor: 'rgba(30, 58, 138, 0.95)',
+                                borderRadius: 8
+                            }
+                        },
+                        scales: {
+                            yKcal: {
+                                type: 'linear',
+                                position: 'left',
+                                title: { display: true, text: '熱量 (kcal)', font: { weight: 'bold' } },
+                                grid: { drawOnChartArea: false }
+                            },
+                            yWeight: {
+                                type: 'linear',
+                                position: 'right',
+                                title: { display: true, text: '體重 (kg)', font: { weight: 'bold' } },
+                                min: finalMinWeight,
+                                max: finalMaxWeight
                             }
                         }
                     }
-                },
-                scales: {
-                    yKcal: {
-                        type: 'linear',
-                        position: 'left',
-                        title: { display: true, text: '熱量 (kcal)', font: { weight: 'bold' } },
-                        grid: { drawOnChartArea: false }
-                    },
-                    yWeight: {
-                        type: 'linear',
-                        position: 'right',
-                        title: { display: true, text: '體重 (kg)', font: { weight: 'bold' } },
-                        min: finalMinWeight,
-                        max: finalMaxWeight
-                    }
-                }
-            }
+                });
+            });
         });
     }
 
@@ -1386,92 +1376,87 @@
         const container = document.getElementById('history-days-container');
         if (!container) return;
 
-        const foodRecords = JSON.parse(localStorage.getItem('myFoodRecords')) || [];
-        const bedtimeHistory = JSON.parse(localStorage.getItem('myBedtimeHistory')) || {};
-        const wakeupHistory = JSON.parse(localStorage.getItem('myWakeupHistory')) || {};
-        const dailyFatHistory = JSON.parse(localStorage.getItem('myDailyBodyFatHistory')) || {};
-        const dailyVisceralHistory = JSON.parse(localStorage.getItem('myDailyVisceralHistory')) || {};
-        const p = JSON.parse(localStorage.getItem('myProfileData')) || {};
+        getAllFoodRecords(function(foodRecords) {
+            getHealthHistory(function(healthHistory) {
+                const p = JSON.parse(localStorage.getItem('myProfileData')) || {};
 
-        let dateSet = new Set();
-        dateSet.add(todayStr);
-        foodRecords.forEach(r => dateSet.add(r.date));
-        Object.keys(bedtimeHistory).forEach(d => dateSet.add(d));
-        Object.keys(wakeupHistory).forEach(d => dateSet.add(d));
-        Object.keys(dailyFatHistory).forEach(d => dateSet.add(d));
-        Object.keys(dailyVisceralHistory).forEach(d => dateSet.add(d));
-        let allSortedDates = Array.from(dateSet).sort(); 
+                let dateSet = new Set();
+                dateSet.add(todayStr);
+                foodRecords.forEach(r => dateSet.add(r.date));
+                Object.keys(healthHistory).forEach(d => dateSet.add(d));
+                let allSortedDates = Array.from(dateSet).sort(); 
 
-        let displayDates = [];
-        if (currentCardRange === 'day') displayDates = [getTargetMmDdStr('foodLogDate')]; 
-        else if (currentCardRange === 'week') displayDates = allSortedDates.slice(-7); 
-        else displayDates = allSortedDates.slice(-30); 
+                let displayDates = [];
+                if (currentCardRange === 'day') displayDates = [getTargetMmDdStr('foodLogDate')]; 
+                else if (currentCardRange === 'week') displayDates = allSortedDates.slice(-7); 
+                else displayDates = allSortedDates.slice(-30); 
 
-        let htmlContent = '';
+                let htmlContent = '';
 
-        displayDates.forEach(date => {
-            const dayFoods = foodRecords.filter(r => r.date === date);
-            
-            const bw = bedtimeHistory[date] ? `${bedtimeHistory[date]}kg` : '-';
-            const ww = wakeupHistory[date] ? `${wakeupHistory[date]}kg` : '-';
-            const df = dailyFatHistory[date] ? `${dailyFatHistory[date]}%` : (p.bodyFat ? `${p.bodyFat}%` : '-');
-            const dv = dailyVisceralHistory[date] ? `${dailyVisceralHistory[date]}` : (p.visceralFat ? `${p.visceralFat}` : '-');
+                displayDates.forEach(date => {
+                    const dayFoods = foodRecords.filter(r => r.date === date);
+                    const dayData = healthHistory[date] || {};
+                    
+                    const bw = dayData.bedtime ? `${dayData.bedtime}kg` : '-';
+                    const ww = dayData.wakeup ? `${dayData.wakeup}kg` : '-';
+                    const df = dayData.fat ? `${dayData.fat}%` : (p.bodyFat ? `${p.bodyFat}%` : '-');
+                    const dv = dayData.visceral ? `${dayData.visceral}` : (p.visceralFat ? `${p.visceralFat}` : '-');
 
-            const bodyDataBadgeLine = `
-                <div class="mt-1 d-flex flex-wrap gap-1" style="font-size: 11px;">
-                    <span class="badge bg-light text-dark border">🌙 睡前: ${bw}</span>
-                    <span class="badge bg-light text-dark border">☀️ 起床: ${ww}</span>
-                    <span class="badge bg-light text-success border">🩸 體脂: ${df}</span>
-                    <span class="badge bg-light text-danger border">🫁 內脂: ${dv}</span>
-                </div>
-            `;
-
-            if (dayFoods.length > 0) {
-                const sortedDayFoods = [...dayFoods].reverse();
-                sortedDayFoods.forEach((food, index) => {
-                    let previewImgHtml = `<div style="width:60px; height:60px; background:#e2e8f0; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:11px;">無照片</div>`;
-                    if (food.photo) previewImgHtml = `<img src="${food.photo}" style="width:60px; height:60px; object-fit:cover; border-radius:10px;">`;
-
-                    htmlContent += `
-                        <div class="d-flex align-items-center justify-content-between border-bottom py-2">
-                            ${previewImgHtml}
-                            <div class="flex-grow-1 ms-3">
-                                <div class="fw-bold text-secondary" style="font-size:11px;">📅 日期: ${date} ⏰ 時間: ${food.time}</div>
-                                <div class="text-dark fw-bold" style="font-size: 0.92rem; margin-top:2px;">😋 餐點: ${food.name}</div>
-                                ${index === 0 ? bodyDataBadgeLine : ''}
-                            </div>
-                            <div class="text-end d-flex align-items-center g-2">
-                                <span class="badge bg-success font-monospace" style="font-size: 0.82rem; padding: 5px 8px;">${food.kcal} kcal</span>
-                                <button class="delete-btn-single ms-1" onclick="deleteSingleFoodRecord(${food.id})">❌</button>
-                            </div>
+                    const bodyDataBadgeLine = `
+                        <div class="mt-1 d-flex flex-wrap gap-1" style="font-size: 11px;">
+                            <span class="badge bg-light text-dark border">🌙 睡前: ${bw}</span>
+                            <span class="badge bg-light text-dark border">☀️ 起床: ${ww}</span>
+                            <span class="badge bg-light text-success border">🩸 體脂: ${df}</span>
+                            <span class="badge bg-light text-danger border">🫁 內脂: ${dv}</span>
                         </div>
                     `;
-                });
-            } else {
-                htmlContent += `
-                    <div class="d-flex align-items-center justify-content-between border-bottom py-2">
-                        <div style="width:60px; height:60px; background:#e2e8f0; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:11px;">空</div>
-                        <div class="flex-grow-1 ms-3">
-                            <div class="fw-bold text-muted" style="font-size:11px;">📅 ${date}</div>
-                            <div class="text-muted small" style="font-size: 11px;">當日尚無餐量進食紀錄</div>
-                            ${bodyDataBadgeLine}
-                        </div>
-                        <div class="text-end">
-                            <span class="badge bg-light text-secondary border small" style="font-size: 11px;">0 kcal</span>
-                        </div>
-                    </div>
-                `;
-            }
-        });
 
-        container.innerHTML = htmlContent;
+                    if (dayFoods.length > 0) {
+                        const sortedDayFoods = [...dayFoods].reverse();
+                        sortedDayFoods.forEach((food, index) => {
+                            let previewImgHtml = `<div style="width:60px; height:60px; background:#e2e8f0; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:11px;">無照片</div>`;
+                            if (food.photo) previewImgHtml = `<img src="${food.photo}" style="width:60px; height:60px; object-fit:cover; border-radius:10px;">`;
+
+                            htmlContent += `
+                                <div class="d-flex align-items-center justify-content-between border-bottom py-2">
+                                    ${previewImgHtml}
+                                    <div class="flex-grow-1 ms-3">
+                                        <div class="fw-bold text-secondary" style="font-size:11px;">📅 日期: ${date} ⏰ 時間: ${food.time}</div>
+                                        <div class="text-dark fw-bold" style="font-size: 0.92rem; margin-top:2px;">😋 餐點: ${food.name}</div>
+                                        ${index === 0 ? bodyDataBadgeLine : ''}
+                                    </div>
+                                    <div class="text-end d-flex align-items-center g-2">
+                                        <span class="badge bg-success font-monospace" style="font-size: 0.82rem; padding: 5px 8px;">${food.kcal} kcal</span>
+                                        <button class="delete-btn-single ms-1" onclick="deleteSingleFoodRecord(${food.id})">❌</button>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                    } else {
+                        htmlContent += `
+                            <div class="d-flex align-items-center justify-content-between border-bottom py-2">
+                                <div style="width:60px; height:60px; background:#e2e8f0; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:11px;">空</div>
+                                <div class="flex-grow-1 ms-3">
+                                    <div class="fw-bold text-muted" style="font-size:11px;">📅 ${date}</div>
+                                    <div class="text-muted small" style="font-size: 11px;">當日尚無餐量進食紀錄</div>
+                                    ${bodyDataBadgeLine}
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge bg-light text-secondary border small" style="font-size: 11px;">0 kcal</span>
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+
+                container.innerHTML = htmlContent;
+            });
+        });
     }
 
-    // 智慧過敏防護提問詞大師功能
     function askGeminiHelper() {
         const savedProfile = JSON.parse(localStorage.getItem('myProfileData')) || {};
         const allergyVal = savedProfile.allergy ? savedProfile.allergy.trim() : '';
-        
         let text = "請幫我計算以下食物的熱量大卡：";
         
         if (allergyVal && allergyVal !== "無" && allergyVal !== "沒有") {
