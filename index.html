@@ -711,7 +711,7 @@
         return `${parts[1]}/${parts[2]}`;
     }
 
-    // 🌟 修正與強化：智慧檢查「選定日期」輸入過了沒，並渲染畫面提示 🌟
+    // 🌟 智慧檢查「選定日期」輸入過了沒，並渲染畫面提示 🌟
     function checkAndRenderWeightStatus() {
         const targetMmDd = getTargetMmDdStr('weightLogDate');
         
@@ -759,7 +759,7 @@
     }
 
     function factoryResetAllData() {
-        const msg1 = "⚠️ 您即將啟動餐量管理資訊重置。\n這將會徹底抹除您這台手機上記錄的所有飲食日記、照片、體重、體脂、內臟脂肪以及個人數據。\n\n";
+        const msg1 = "⚠️ 您即將啟動餐量管理資訊重置。\n這將會徹底抹除您這台手機平台上記錄的所有飲食日記、照片、體重、體脂、內臟脂肪以及個人數據。\n\n";
         const msg2 = "💡 資訊重置不會影響手機其他所有APP的資訊。\n\n";
         const msg3 = "確定要清空個人數據重新開始嗎？";
         
@@ -985,7 +985,7 @@
         initChart();
     }
 
-    // 🌟 核心增修：同步保存「選定日期」的雙體重、每日體脂、每日內臟脂肪 (自由補 PO 支援) 🌟
+    // 同步保存「選定日期」的雙體重、每日體脂、每日內臟脂肪 (自由補 PO 支援)
     function addDoubleWeightRecord() {
         const targetMmDd = getTargetMmDdStr('weightLogDate');
 
@@ -1018,7 +1018,6 @@
         localStorage.setItem('myBedtimeHistory', JSON.stringify(bedtimeHistory));
         localStorage.setItem('myWakeupHistory', JSON.stringify(wakeupHistory));
         localStorage.setItem('myDailyBodyFatHistory', JSON.stringify(dailyFatHistory));
-        localStorage.setItem('setItem', JSON.stringify(dailyVisceralHistory)); // 防呆相容性
         localStorage.setItem('myDailyVisceralHistory', JSON.stringify(dailyVisceralHistory));
 
         alert(`${targetMmDd} 數據已存檔 ✅`);
@@ -1067,7 +1066,7 @@
         }
     }
 
-    // 🌟 修正：寫入時改為抓取指定「補 PO 日期」 🌟
+    // 寫入時改為抓取指定「補 PO 日期」 
     function saveToLocalStorage(name, kcal, photoUrl) {
         const targetMmDd = getTargetMmDdStr('foodLogDate');
         
@@ -1107,7 +1106,7 @@
         initChart();
     }
 
-    // 🌟 修正：清空時一併清空「指定日期」的所有相關紀錄 🌟
+    // 清空時一併清空「指定日期」的所有相關紀錄
     function clearTodayRecords() {
         const targetMmDd = getTargetMmDdStr('foodLogDate');
         if (!confirm(`⚠️ 確定要清除「${targetMmDd}」的所有飲食與核心打卡紀錄嗎？此動作無法復原喔！`)) return;
@@ -1146,7 +1145,7 @@
         alert(`${targetMmDd} 紀錄已清空！`);
     }
 
-    // 🌟 修正：看板標題隨選擇日期自動切換，並精準計算當日總熱量進度條 🌟
+    // 看板標題隨選擇日期自動切換，並精準計算當日總熱量進度條
     function renderFoodList() {
         const targetMmDd = getTargetMmDdStr('foodLogDate');
         
@@ -1462,20 +1461,26 @@
         container.innerHTML = htmlContent;
     }
 
+    // 🌟 智慧過敏防護提問詞大師功能 🌟
     function askGeminiHelper() {
-        const allergyInput = document.getElementById('allergy');
-        const allergyVal = allergyInput ? allergyInput.value.trim() : '';
+        // 1. 自動從個人檔案資料庫抓取最新留存的資料
+        const savedProfile = JSON.parse(localStorage.getItem('myProfileData')) || {};
+        // 2. 讀取過敏食物欄位，如果沒有或是寫「無」，就當作沒有過敏
+        const allergyVal = savedProfile.allergy ? savedProfile.allergy.trim() : '';
         
         let text = "請幫我計算以下食物的熱量大卡：";
-        if (allergyVal && allergyVal !== "無") {
-            text = `請幫我計算以下食物的熱量大卡。請特別注意：我對「${allergyVal}」過敏，若食物中可能含有相關成分，請務必在回答中顯眼地提醒我！`;
+        
+        // 3. 智慧檢查：只要有填寫非「無」的字眼，就自動啟動智慧安全加強詞！
+        if (allergyVal && allergyVal !== "無" && allergyVal !== "沒有") {
+            text = `請幫我計算以下食物的熱量大卡。請特別注意：我對「${allergyVal}」過敏，如果有會引起我過敏的食物，請提醒我。`;
         }
 
+        // 4. 複製到剪貼簿並安全開啟視窗
         navigator.clipboard.writeText(text).then(() => {
-            alert(`🤖 貼心提問詞已複製成功！\n\n內容：\n"${text}"\n\n即將為您打開新視窗，請直接貼上提問詞並上傳您的食物照片。`);
+            alert(`🤖 智慧提問詞已成功複製！\n\n系統已自動為您檢測防守過敏原：【${allergyVal || '無'}】\n\n即將開啟新分頁，請直接貼上提問詞並上傳您的食物照片。`);
             window.open("https://gemini.google.com/", "_blank");
         }).catch(() => {
-            alert("複製失敗，請手動輸入提問詞喔！");
+            alert("複製失敗，請手動複製喔！");
         });
     }
 </script>
